@@ -86,3 +86,25 @@ func (r *Repository) UpsertMany(ctx context.Context, list []Station) (int64, err
 	}
 	return res.UpsertedCount + res.ModifiedCount, nil
 }
+
+// InsertMissing ajoute seulement les stations qui ne sont pas encore en base.
+// Utilisé par l'import des archives : une station déjà mise à jour par le
+// flux du jour ne doit pas être écrasée par une version plus ancienne.
+func (r *Repository) InsertMissing(ctx context.Context, list []Station) (int64, error) {
+	if len(list) == 0 {
+		return 0, nil
+	}
+	models := make([]mongo.WriteModel, 0, len(list))
+	for _, s := range list {
+		models = append(models, mongo.NewUpdateOneModel().
+			SetFilter(bson.D{{Key: "_id", Value: s.ID}}).
+			// $setOnInsert n'écrit que si le document est créé par l'upsert
+			SetUpdate(bson.D{{Key: "$setOnInsert", Value: s}}).
+			SetUpsert(true))
+	}
+	res, err := r.coll.BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		return 0, fmt.Errorf("ajout des stations manquantes : %w", err)
+	}
+	return res.UpsertedCount, nil
+}

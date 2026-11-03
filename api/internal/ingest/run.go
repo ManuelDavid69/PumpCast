@@ -12,7 +12,7 @@ import (
 
 // Au delà de 30 jours sans mise à jour, un prix est sûrement abandonné
 // (carburant plus vendu mais jamais retiré du flux). On ne le garde pas.
-const maxPriceAge = 30 * 24 * time.Hour
+const MaxPriceAge = 30 * 24 * time.Hour
 
 // Deps regroupe ce dont l'ingestion a besoin pour écrire.
 type Deps struct {
@@ -47,26 +47,31 @@ type Batch struct {
 	History  []prices.DailyPrice
 }
 
+// StationDoc convertit une station du flux en document MongoDB.
+func StationDoc(st Station, updatedAt time.Time) stations.Station {
+	doc := stations.Station{
+		ID:           st.ID,
+		Address:      st.Address,
+		City:         st.City,
+		PostalCode:   st.PostalCode,
+		Department:   st.Department,
+		RoadType:     st.RoadType,
+		Services:     st.Services,
+		OpeningHours: st.Hours,
+		UpdatedAt:    updatedAt,
+	}
+	if st.HasCoords {
+		doc.Location = stations.NewPoint(st.Latitude, st.Longitude)
+	}
+	return doc
+}
+
 // BuildBatch transforme les stations du flux en documents à écrire.
 func BuildBatch(list []Station, now time.Time, keepHistory func(string) bool) Batch {
 	b := Batch{Current: make(map[string][]prices.Current, len(list))}
 
 	for _, st := range list {
-		doc := stations.Station{
-			ID:           st.ID,
-			Address:      st.Address,
-			City:         st.City,
-			PostalCode:   st.PostalCode,
-			Department:   st.Department,
-			RoadType:     st.RoadType,
-			Services:     st.Services,
-			OpeningHours: st.Hours,
-			UpdatedAt:    now,
-		}
-		if st.HasCoords {
-			doc.Location = stations.NewPoint(st.Latitude, st.Longitude)
-		}
-		b.Stations = append(b.Stations, doc)
+		b.Stations = append(b.Stations, StationDoc(st, now))
 
 		// Carburants en rupture temporaire en ce moment.
 		// Une rupture "definitive" veut dire que la station ne vend plus ce carburant.
@@ -86,7 +91,7 @@ func BuildBatch(list []Station, now time.Time, keepHistory func(string) bool) Ba
 		var current []prices.Current
 		seen := map[string]bool{}
 		for _, p := range st.Prices {
-			if dropped[p.Fuel] || now.Sub(p.UpdatedAt) > maxPriceAge {
+			if dropped[p.Fuel] || now.Sub(p.UpdatedAt) > MaxPriceAge {
 				continue
 			}
 			seen[p.Fuel] = true
@@ -129,7 +134,7 @@ func Run(ctx context.Context, xmlData []byte, d Deps) (Summary, error) {
 	}
 
 	b := BuildBatch(list, now, d.KeepHistory)
-	sum := Summary{Stations: len(list), Skipped: skipped, CurrentPrices: len(b.Current), Day: prices.Day(now, paris)}
+	sum := Summary{Stations: len(list), Skipped: skipped, CurrentPrices: len(b.Current), Day: prices.Day(now, Paris)}
 
 	if sum.StationsWrites, err = d.Stations.UpsertMany(ctx, b.Stations); err != nil {
 		return sum, err

@@ -20,8 +20,8 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
 )
 
-// Les dates du flux sont en heure de Paris, sans fuseau indiqué.
-var paris = mustLoadLocation("Europe/Paris")
+// Paris est le fuseau des dates du flux, qui sont données sans fuseau.
+var Paris = mustLoadLocation("Europe/Paris")
 
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
@@ -299,8 +299,10 @@ func parsePrice(s string) (float64, error) {
 	if v > 100 {
 		v /= 1000
 	}
-	// En dessous de 10 centimes ou au dessus de 10 € c'est une erreur de saisie
-	if v < 0.1 || v > 10 {
+	// Hors de 0,30 € - 5 € c'est une faute de frappe de la station (vu dans les
+	// archives : un gazole à 8,82 €, de l'E85 à 0,13 €). Les valeurs moins
+	// grossières seront filtrées plus tard par rapport au prix moyen du département.
+	if v < 0.3 || v > 5 {
 		return 0, fmt.Errorf("prix incohérent : %s", s)
 	}
 	return v, nil
@@ -314,7 +316,7 @@ func parseDate(s string) (time.Time, error) {
 		return time.Time{}, errors.New("date vide")
 	}
 	for _, layout := range []string{"2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
-		if t, err := time.ParseInLocation(layout, s, paris); err == nil {
+		if t, err := time.ParseInLocation(layout, s, Paris); err == nil {
 			return t, nil
 		}
 	}

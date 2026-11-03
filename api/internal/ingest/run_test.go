@@ -24,7 +24,7 @@ func TestBuildBatch(t *testing.T) {
 		t.Fatalf("skipped = %d, attendu 1", skipped)
 	}
 
-	now := time.Date(2026, 11, 3, 12, 0, 0, 0, paris)
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, Paris)
 	b := BuildBatch(list, now, func(d string) bool { return d == "69" })
 
 	if len(b.Stations) != 3 {

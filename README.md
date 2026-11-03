@@ -22,6 +22,14 @@ cd api
 go run ./cmd/ingest
 ```
 
+Importer l'historique depuis les archives annuelles (environ 2 min, les zips sont gardés dans `data/archives/`) :
+
+```bash
+go run ./cmd/importhistory -from 2023 -to 2026
+```
+
+Les archives ne donnent que les changements de prix. L'import reconstruit un prix par jour (le dernier prix connu), arrête de reporter un prix resté 30 jours sans mise à jour et saute les jours de rupture. 2022 n'est pas importée par défaut : la remise carburant de l'État d'avril à décembre crée des sauts de prix artificiels.
+
 Lancer l'API (route `/health` pour l'instant) :
 
 ```bash
@@ -36,4 +44,10 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test ./...
 
 ## Sources des données
 
-- Prix des carburants en France, flux instantané (prix-carburants.gouv.fr / data.economie.gouv.fr), Licence Ouverte 2.0
+- Prix des carburants en France, flux instantané et archives annuelles (prix-carburants.gouv.fr / data.economie.gouv.fr), Licence Ouverte 2.0
+
+## Pourquoi l'historique est limité à Auvergne-Rhône-Alpes
+
+L'hébergement gratuit de MongoDB (Atlas M0) est limité à 512 Mo. Les prix actuels sont gardés pour toute la France (dans Redis), mais l'historique jour par jour ne l'est que pour les départements de `HISTORY_DEPARTMENTS` (AURA par défaut, environ 2 000 stations).
+
+Mesuré en local : de 2023 à novembre 2026, ça fait 5,7 millions de relevés, 87 Mo de données et 48 Mo réellement sur le disque grâce à la compression des collections time series. On a donc de la marge pour ajouter des années ou des départements plus tard.

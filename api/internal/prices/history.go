@@ -121,3 +121,31 @@ func (r *HistoryRepository) pricesOfDay(ctx context.Context, day time.Time) (map
 	}
 	return m, nil
 }
+
+// DeleteRange supprime l'historique de ces stations entre start et end inclus.
+// Sert à réimporter une année sans créer de doublons.
+func (r *HistoryRepository) DeleteRange(ctx context.Context, stationIDs []string, start, end time.Time) (int64, error) {
+	if len(stationIDs) == 0 {
+		return 0, nil
+	}
+	res, err := r.coll.DeleteMany(ctx, bson.D{
+		{Key: "meta.station_id", Value: bson.D{{Key: "$in", Value: stationIDs}}},
+		{Key: "ts", Value: bson.D{{Key: "$gte", Value: start}, {Key: "$lte", Value: end}}},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("suppression de l'historique : %w", err)
+	}
+	return res.DeletedCount, nil
+}
+
+// InsertMany insère des relevés sans vérifier les doublons (c'est à
+// l'appelant de nettoyer avant, avec DeleteRange).
+func (r *HistoryRepository) InsertMany(ctx context.Context, list []DailyPrice) error {
+	if len(list) == 0 {
+		return nil
+	}
+	if _, err := r.coll.InsertMany(ctx, list, options.InsertMany().SetOrdered(false)); err != nil {
+		return fmt.Errorf("insertion de l'historique : %w", err)
+	}
+	return nil
+}

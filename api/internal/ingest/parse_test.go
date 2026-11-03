@@ -111,7 +111,7 @@ func TestParseSample(t *testing.T) {
 	if gazole.Value != 1.629 {
 		t.Errorf("GAZOLE = %v, attendu 1.629", gazole.Value)
 	}
-	if want := time.Date(2026, 11, 3, 8, 15, 0, 0, paris); !gazole.UpdatedAt.Equal(want) {
+	if want := time.Date(2026, 11, 3, 8, 15, 0, 0, Paris); !gazole.UpdatedAt.Equal(want) {
 		t.Errorf("UpdatedAt GAZOLE = %v, attendu %v", gazole.UpdatedAt, want)
 	}
 	if priceOf(t, st.Prices, "SP98").Value != 1.799 {
@@ -156,7 +156,7 @@ func TestParseSample(t *testing.T) {
 	if sp95.Value != 1.459 {
 		t.Errorf("SP95 = %v, attendu 1.459", sp95.Value)
 	}
-	if want := time.Date(2007, 1, 2, 9, 1, 0, 0, paris); !sp95.UpdatedAt.Equal(want) {
+	if want := time.Date(2007, 1, 2, 9, 1, 0, 0, Paris); !sp95.UpdatedAt.Equal(want) {
 		t.Errorf("UpdatedAt SP95 = %v, attendu %v", sp95.UpdatedAt, want)
 	}
 	if len(st2.Ruptures) != 1 || st2.Ruptures[0].Ongoing() {
@@ -232,6 +232,8 @@ func TestParsePrice(t *testing.T) {
 		{in: "1459", want: 1.459},
 		{in: "0.05", wantErr: true},
 		{in: "25", wantErr: true},
+		{in: "8.835", wantErr: true},
+		{in: "0.169", wantErr: true},
 		{in: "abc", wantErr: true},
 	}
 
