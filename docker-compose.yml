@@ -1,0 +1,33 @@
+# Environnement de dev local : MongoDB + Redis.
+# L'API et le front seront ajoutés au fur et à mesure.
+services:
+  mongo:
+    image: mongo:8.0
+    container_name: pumpcast-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: pumpcast-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    # Pas de persistance sur disque : c'est un cache, tout peut être reconstruit
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

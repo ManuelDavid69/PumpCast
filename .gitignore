@@ -1,0 +1,41 @@
+# Variables d'environnement (garder .env.example)
+.env
+.env.*
+!.env.example
+
+# Binaires Go compilés
+api/bin/
+*.exe
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Modèles ML (garder le dossier)
+ml/models/*
+!ml/models/.gitkeep
+
+# Frontend Next.js
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+*.tsbuildinfo
+web/.vercel/
+
+# Données téléchargées
+/data/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
