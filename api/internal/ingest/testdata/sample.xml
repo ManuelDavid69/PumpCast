@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+<pdv_liste>
+  <pdv id="69100001" latitude="4577120" longitude="488350" cp="69100" pop="R">
+    <adresse>145, Rue Anatole France</adresse>
+    <ville>Villeurbanne</ville>
+    <horaires automate-24-24="1">
+      <jour id="1" nom="Lundi" ferme="">
+        <horaire ouverture="07.00" fermeture="19.30"/>
+      </jour>
+      <jour id="7" nom="Dimanche" ferme="1"/>
+    </horaires>
+    <services>
+      <service>Boutique alimentaire</service>
+      <service>Lavage automatique</service>
+    </services>
+    <prix nom="Gazole" id="1" maj="2026-11-03 08:15:00" valeur="1.629"/>
+    <prix nom="SP98" id="6" maj="2026-11-02 18:00:00" valeur="1.799"/>
+    <prix nom="E10" id="5" maj="2026-09-01 10:00:00" valeur="1.699"/>
+    <rupture id="3" nom="E85" debut="2026-11-01 09:00:00" fin="" type="temporaire"/>
+    <rupture id="4" nom="GPLc" debut="2026-01-01 09:00:00" fin="" type="definitive"/>
+  </pdv>
+  <pdv id="20000005" latitude="4192500.5" longitude="873800" cp="20090" pop="A">
+    <adresse>Route de l'Aéroport</adresse>
+    <ville>Ajaccio</ville>
+    <services/>
+    <prix nom="SP95" id="2" maj="2007-01-02T09:01:00" valeur="1459"/>
+    <rupture id="1" nom="Gazole" debut="2026-10-01 09:00:00" fin="2026-10-02 09:00:00" type="temporaire"/>
+  </pdv>
+  <pdv id="97100001" latitude="" longitude="" cp="97139" pop="R">
+    <adresse>Rue de la Rénovation</adresse>
+    <ville>Les Abymes</ville>
+    <prix nom="Gazole" id="1" maj="2026-11-03 07:00:00" valeur="1.850"/>
+    <prix nom="Hydrogène" id="9" maj="2026-11-03 07:00:00" valeur="12.000"/>
+  </pdv>
+  <pdv id="" latitude="4500000" longitude="450000" cp="69000" pop="R">
+    <adresse>Station sans identifiant</adresse>
+    <ville>Lyon</ville>
+  </pdv>
+</pdv_liste>
