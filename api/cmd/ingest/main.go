@@ -63,6 +63,9 @@ func run(file string) error {
 		}
 	}()
 	database := mongoClient.Database(cfg.MongoDB)
+	if err := db.EnsureSchema(ctx, database); err != nil {
+		return err
+	}
 
 	redisClient, err := cache.Connect(ctx, cfg.RedisURL)
 	if err != nil {
