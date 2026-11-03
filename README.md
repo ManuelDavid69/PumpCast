@@ -15,6 +15,25 @@ docker compose up -d
 
 Ça démarre MongoDB (port 27017) et Redis (port 6379).
 
+Récupérer les prix du jour (à relancer quand on veut, ça ne crée pas de doublons) :
+
+```bash
+cd api
+go run ./cmd/ingest
+```
+
+Lancer l'API (route `/health` pour l'instant) :
+
+```bash
+go run ./cmd/server
+```
+
+Tests (le test sur la time series a besoin du MongoDB local, il est ignoré sinon) :
+
+```bash
+MONGO_TEST_URI=mongodb://localhost:27017 go test ./...
+```
+
 ## Sources des données
 
 - Prix des carburants en France, flux instantané (prix-carburants.gouv.fr / data.economie.gouv.fr), Licence Ouverte 2.0
