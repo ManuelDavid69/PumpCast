@@ -1,0 +1,86 @@
+// Package config lit la configuration depuis les variables d'environnement.
+package config
+
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+// Config regroupe tous les réglages de l'API et de l'ingestion.
+type Config struct {
+	MongoURI string
+	MongoDB  string
+	RedisURL string
+	APIPort  string
+	FeedURL  string
+	// Départements dont on garde l'historique des prix.
+	// nil veut dire toute la France.
+	HistoryDepartments []string
+}
+
+// Load lit les variables d'environnement. Les valeurs par défaut
+// correspondent au docker compose local, comme ça un simple `go run` marche.
+func Load() (Config, error) {
+	cfg := Config{
+		MongoURI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:  getEnv("MONGO_DB", "pumpcast"),
+		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
+		APIPort:  getEnv("API_PORT", "8080"),
+		FeedURL:  getEnv("FEED_URL", "https://donnees.roulez-eco.fr/opendata/instantane"),
+	}
+
+	deps, err := parseDepartments(getEnv("HISTORY_DEPARTMENTS", "all"))
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.HistoryDepartments = deps
+
+	return cfg, nil
+}
+
+// KeepHistory dit si on stocke l'historique des prix pour ce département.
+func (c Config) KeepHistory(department string) bool {
+	if c.HistoryDepartments == nil {
+		return true
+	}
+	for _, d := range c.HistoryDepartments {
+		if d == department {
+			return true
+		}
+	}
+	return false
+}
+
+func getEnv(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		return v
+	}
+	return fallback
+}
+
+// parseDepartments transforme "01, 69,38" en ["01", "69", "38"].
+// "all" (ou vide) renvoie nil pour dire "pas de filtre".
+func parseDepartments(raw string) ([]string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || strings.EqualFold(raw, "all") {
+		return nil, nil
+	}
+
+	var deps []string
+	for _, part := range strings.Split(raw, ",") {
+		d := strings.ToUpper(strings.TrimSpace(part))
+		if d == "" {
+			continue
+		}
+		// 2 caractères en métropole (01, 2A...), 3 pour l'outre-mer (971...)
+		if len(d) < 2 || len(d) > 3 {
+			return nil, fmt.Errorf("HISTORY_DEPARTMENTS : département invalide %q", d)
+		}
+		deps = append(deps, d)
+	}
+	if len(deps) == 0 {
+		return nil, fmt.Errorf("HISTORY_DEPARTMENTS ne contient aucun département")
+	}
+	return deps, nil
+}
