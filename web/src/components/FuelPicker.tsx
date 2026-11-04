@@ -1,6 +1,6 @@
 "use client";
 
-import { FUEL_LABELS, FUELS, type Fuel } from "@/lib/format";
+import { FUEL_CODES, FUEL_LABELS, FUELS, type Fuel } from "@/lib/format";
 
 // Choix du carburant, sous forme de boutons radio pour rester accessible au clavier
 export function FuelPicker({ value, onChange, name = "fuel" }: { value: Fuel; onChange: (f: Fuel) => void; name?: string }) {
@@ -21,6 +21,7 @@ export function FuelPicker({ value, onChange, name = "fuel" }: { value: Fuel; on
             className="sr-only"
           />
           {FUEL_LABELS[fuel]}
+          {FUEL_CODES[fuel] && <span className="ml-1 text-xs font-normal opacity-60">{FUEL_CODES[fuel]}</span>}
         </label>
       ))}
     </fieldset>

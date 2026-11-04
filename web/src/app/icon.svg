@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1b2430"/>
+  <!-- la pompe -->
+  <rect x="7" y="7" width="11" height="19" rx="1.5" fill="#f7f8f6"/>
+  <rect x="9" y="9.5" width="7" height="5" rx="0.8" fill="#1d4f91"/>
+  <path d="M18 11h2.5a1.5 1.5 0 0 1 1.5 1.5V21a1.5 1.5 0 0 0 3 0v-7l-2.5-3" fill="none" stroke="#f7f8f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- l'ambre des pompes, pour le millième -->
+  <circle cx="24.5" cy="8" r="2.2" fill="#e8a317"/>
+</svg>

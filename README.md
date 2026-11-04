@@ -36,6 +36,13 @@ Récupérer les données externes (Brent, EUR/USD, jours fériés, vacances scol
 docker compose --profile ml run --rm ml
 ```
 
+Entraîner le modèle (une quinzaine de minutes, une fois par semaine en production) puis calculer les prévisions du jour :
+
+```bash
+docker compose --profile ml run --rm ml python -m pumpcast_ml.train
+docker compose --profile ml run --rm ml python -m pumpcast_ml.predict
+```
+
 Ouvrir le notebook d'exploration (Jupyter Lab sur http://localhost:8888, le lien avec le token s'affiche dans le terminal) :
 
 ```bash
@@ -108,3 +115,13 @@ Mesuré en local : de 2023 à novembre 2026, ça fait 5,7 millions de relevés, 
 - **Courbes en escalier** : un prix ne bouge pas entre deux changements, une courbe lissée inventerait des prix intermédiaires qui n'ont jamais existé.
 - **Recherche de ville** avec le service de géocodage officiel de l'IGN (Géoplateforme), gratuit et sans clé.
 
+## Le modèle, honnêtement
+
+Le modèle prévoit la variation du prix de chaque station sur 1 à 7 jours (gradient boosting de scikit-learn, un modèle par horizon pour toutes les stations). Il est comparé à la prévision naïve « le prix ne bouge pas », qui est très difficile à battre : la plupart des jours, une station ne change pas son prix.
+
+- Découpage dans le temps uniquement : mise au point sur mai à octobre 2025 (validation), constat final sur novembre 2025 à aujourd'hui (test), sans jamais régler le modèle en regardant le test.
+- Le cours du Brent est publié avec une semaine de retard : le modèle n'utilise que le cours connu le jour de la prévision.
+- Les fourchettes viennent de modèles quantiles (10 % et 90 %) recalés par calibration conformale.
+- Règle d'honnêteté : un horizon où le modèle ne bat pas la baseline n'est pas utilisé, et l'appli ne donne pas de conseil si aucun des 3 prochains jours n'est fiable.
+
+Les scores détaillés sont sur la page « Modèle » du site.

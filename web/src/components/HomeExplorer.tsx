@@ -114,6 +114,11 @@ export function HomeExplorer() {
         </div>
       </div>
 
+      <p className="-mt-2 mb-4 max-w-prose text-[15px] text-muted">
+        Les prix viennent du flux officiel, mis à jour par les stations toute la journée. Clique sur une station pour
+        voir son historique et la prévision des prochains jours (Auvergne-Rhône-Alpes seulement pour l&apos;instant).
+      </p>
+
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <FuelPicker value={fuel} onChange={setFuel} />
         <div className="flex items-center gap-2 text-sm">

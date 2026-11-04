@@ -22,6 +22,8 @@ const NAV = [
   { href: "/", label: "Carte" },
   { href: "/compare", label: "Comparer" },
   { href: "/departements", label: "Départements" },
+  { href: "/modele", label: "Modèle" },
+  { href: "/a-propos", label: "À propos" },
 ];
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -29,11 +31,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="fr" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <header className="border-b border-line bg-paper">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3">
             <Link href="/" className="font-board text-2xl font-bold tracking-tight">
               PumpCast
             </Link>
-            <nav className="flex gap-0.5 text-sm font-medium sm:gap-1 sm:text-[15px]">
+            <nav className="-mx-2 flex flex-wrap gap-0.5 text-sm font-medium sm:mx-0 sm:gap-1 sm:text-[15px]">
               {NAV.map((item) => (
                 <Link key={item.href} href={item.href} className="rounded px-2 py-1.5 text-muted hover:bg-line/50 hover:text-ink sm:px-3">
                   {item.label}
@@ -48,10 +50,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </Providers>
 
         <footer className="border-t border-line text-sm text-muted">
-          <div className="mx-auto max-w-7xl px-4 py-5 leading-relaxed">
-            Données : prix des carburants (prix-carburants.gouv.fr, Licence Ouverte 2.0), Brent (FRED), EUR/USD (BCE),
-            calendrier scolaire (data.education.gouv.fr), contours des départements (IGN Admin Express), fond de carte
-            © les contributeurs OpenStreetMap. L&apos;enseigne des stations n&apos;est pas dans les données officielles.
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 leading-relaxed sm:flex-row sm:justify-between">
+            <p>
+              Un projet perso de Manuel David, étudiant à CPE Lyon.{" "}
+              <a href="https://github.com/ManuelDavid69/PumpCast" className="underline hover:text-ink">
+                Le code est sur GitHub
+              </a>
+              .
+            </p>
+            <p>
+              Prix : prix-carburants.gouv.fr (Licence Ouverte).{" "}
+              <Link href="/a-propos#sources" className="underline hover:text-ink">
+                Toutes les sources
+              </Link>
+            </p>
           </div>
         </footer>
       </body>
