@@ -156,7 +156,8 @@ func TestCheckerRun(t *testing.T) {
 	if err := db.EnsureSchema(ctx, database); err != nil {
 		t.Fatal(err)
 	}
-	rdb, err := cache.Connect(ctx, "redis://localhost:6379/15")
+	// Base Redis 12 : chaque package de tests a la sienne (ils tournent en parallèle)
+	rdb, err := cache.Connect(ctx, "redis://localhost:6379/12")
 	if err != nil {
 		t.Fatal(err)
 	}

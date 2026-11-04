@@ -14,10 +14,17 @@ import (
 // une journée, on préfère ne plus rien afficher que des prix faux.
 const currentTTL = 24 * time.Hour
 
-// CurrentKey est la clé Redis des prix actuels d'une station.
-func CurrentKey(stationID string) string {
-	return "prices:current:" + stationID
-}
+// Tous les prix actuels sont dans un seul hash Redis (un champ par station).
+//
+// Première version : une clé par station, donc environ 9 000 commandes SET à
+// chaque ingestion. L'offre gratuite d'Upstash est limitée à 500 000
+// commandes par mois : avec une ingestion par heure, on l'aurait dépassée 13
+// fois. Avec un hash, l'écriture complète tient en 4 commandes et la lecture
+// de N stations en une seule (HMGET).
+const (
+	CurrentKey     = "prices:current"
+	currentTempKey = "prices:current:next"
+)
 
 // Current est le prix actuel d'un carburant, tel que l'API le servira.
 type Current struct {
@@ -35,28 +42,33 @@ func NewCurrentCache(rdb *redis.Client) *CurrentCache {
 	return &CurrentCache{rdb: rdb}
 }
 
-// SaveAll écrit les prix actuels de toutes les stations.
-// Le pipeline envoie toutes les commandes d'un coup au lieu d'attendre
-// la réponse de Redis entre chaque station.
+// SaveAll remplace tous les prix actuels.
+//
+// On écrit dans un hash temporaire puis on le renomme : le remplacement est
+// atomique. Une requête ne voit jamais un cache à moitié écrit, et une
+// station sortie du flux disparaît tout de suite au lieu de rester 24 h.
 func (c *CurrentCache) SaveAll(ctx context.Context, byStation map[string][]Current) error {
-	const batchSize = 1000
-
-	pipe := c.rdb.Pipeline()
-	n := 0
+	if len(byStation) == 0 {
+		return nil
+	}
+	fields := make(map[string]any, len(byStation))
 	for id, list := range byStation {
 		data, err := json.Marshal(list)
 		if err != nil {
 			return fmt.Errorf("encodage des prix de %s : %w", id, err)
 		}
-		pipe.Set(ctx, CurrentKey(id), data, currentTTL)
-		n++
-		if n%batchSize == 0 {
-			if _, err := pipe.Exec(ctx); err != nil {
-				return fmt.Errorf("écriture redis : %w", err)
-			}
-		}
+		fields[id] = data
 	}
-	if _, err := pipe.Exec(ctx); err != nil {
+
+	// TxPipeline : les 4 commandes partent ensemble dans une transaction (MULTI/EXEC)
+	_, err := c.rdb.TxPipelined(ctx, func(p redis.Pipeliner) error {
+		p.Del(ctx, currentTempKey)
+		p.HSet(ctx, currentTempKey, fields)
+		p.Expire(ctx, currentTempKey, currentTTL)
+		p.Rename(ctx, currentTempKey, CurrentKey)
+		return nil
+	})
+	if err != nil {
 		return fmt.Errorf("écriture redis : %w", err)
 	}
 	return nil
@@ -64,7 +76,7 @@ func (c *CurrentCache) SaveAll(ctx context.Context, byStation map[string][]Curre
 
 // Get lit les prix actuels d'une station. Renvoie nil si rien en cache.
 func (c *CurrentCache) Get(ctx context.Context, stationID string) ([]Current, error) {
-	data, err := c.rdb.Get(ctx, CurrentKey(stationID)).Bytes()
+	data, err := c.rdb.HGet(ctx, CurrentKey, stationID).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return nil, nil
 	}
@@ -79,17 +91,13 @@ func (c *CurrentCache) Get(ctx context.Context, stationID string) ([]Current, er
 }
 
 // GetMany lit les prix actuels de plusieurs stations en une seule commande
-// MGET. Une station absente du cache n'apparaît pas dans le résultat.
+// HMGET. Une station absente du cache n'apparaît pas dans le résultat.
 func (c *CurrentCache) GetMany(ctx context.Context, ids []string) (map[string][]Current, error) {
 	out := make(map[string][]Current, len(ids))
 	if len(ids) == 0 {
 		return out, nil
 	}
-	keys := make([]string, len(ids))
-	for i, id := range ids {
-		keys[i] = CurrentKey(id)
-	}
-	values, err := c.rdb.MGet(ctx, keys...).Result()
+	values, err := c.rdb.HMGet(ctx, CurrentKey, ids...).Result()
 	if err != nil {
 		return nil, fmt.Errorf("lecture des prix actuels : %w", err)
 	}

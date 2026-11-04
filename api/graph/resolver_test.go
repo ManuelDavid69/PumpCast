@@ -83,12 +83,9 @@ func setup(t *testing.T) *testEnv {
 		t.Fatal(err)
 	}
 
-	// Base Redis 15 pour ne pas toucher aux données de dev (base 0)
-	redisURL := os.Getenv("REDIS_TEST_URL")
-	if redisURL == "" {
-		redisURL = "redis://localhost:6379/15"
-	}
-	rdb, err := cache.Connect(ctx, redisURL)
+	// Base Redis 13 : pas celle de dev (0), ni celles des autres packages de
+	// tests qui tournent en parallèle
+	rdb, err := cache.Connect(ctx, "redis://localhost:6379/13")
 	if err != nil {
 		t.Fatal(err)
 	}
