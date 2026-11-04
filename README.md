@@ -36,6 +36,12 @@ Récupérer les données externes (Brent, EUR/USD, jours fériés, vacances scol
 docker compose --profile ml run --rm ml
 ```
 
+Ouvrir le notebook d'exploration (Jupyter Lab sur http://localhost:8888, le lien avec le token s'affiche dans le terminal) :
+
+```bash
+docker compose --profile ml up notebook
+```
+
 Lancer l'API (route `/health` pour l'instant) :
 
 ```bash

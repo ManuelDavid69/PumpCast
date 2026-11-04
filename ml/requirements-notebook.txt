@@ -1,0 +1,5 @@
+# Dépendances en plus pour le notebook d'exploration (pas utiles en production)
+jupyterlab==4.6.5
+nbconvert==7.17.2
+ipykernel==7.4.0
+matplotlib==3.11.2

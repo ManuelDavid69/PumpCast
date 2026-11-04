@@ -32,7 +32,9 @@ services:
       retries: 5
 
   ml:
-    build: ./ml
+    build:
+      context: ./ml
+      target: base
     image: pumpcast-ml
     profiles: ["ml"]
     environment:
@@ -43,6 +45,24 @@ services:
         condition: service_healthy
     volumes:
       # Monte le code local pour itérer sans reconstruire l'image
+      - ./ml:/app
+
+  # Jupyter Lab sur http://localhost:8888 (le lien avec le token est dans les logs)
+  notebook:
+    build:
+      context: ./ml
+      target: notebook
+    image: pumpcast-notebook
+    profiles: ["ml"]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: pumpcast
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8888:8888"
+    volumes:
       - ./ml:/app
 
 volumes:
