@@ -12,10 +12,7 @@ permissions:
 jobs:
   api:
     name: API Go
-    # Pas ubuntu-latest : depuis octobre 2026 c'est Ubuntu 26 (noyau 6.19+),
-    # et MongoDB 8.0 refuse de démarrer sur ces noyaux (SERVER-121912).
-    # À repasser sur ubuntu-latest quand une version corrigée de MongoDB sortira.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: api
@@ -27,7 +24,11 @@ jobs:
       - name: Démarrer MongoDB et Redis
         working-directory: .
         run: |
-          docker run -d --name mongo -p 27017:27017 mongo:8.0
+          # MongoDB 7.0 et pas 8.0 : les runners GitHub ont un noyau Linux 6.19+,
+          # sur lequel MongoDB 8 ne démarre pas (bug de son allocateur mémoire,
+          # SERVER-121912). Le code tourne en 8.0 en local et sur Atlas, la CI
+          # vérifie en plus qu'il marche en 7.0.
+          docker run -d --name mongo -p 27017:27017 mongo:7.0
           docker run -d --name redis -p 6379:6379 redis:7.4-alpine
           for i in $(seq 1 30); do
             docker exec mongo mongosh --quiet --eval 'db.adminCommand({ping: 1}).ok' >/dev/null 2>&1 && break
