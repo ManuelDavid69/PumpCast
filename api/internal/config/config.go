@@ -30,6 +30,12 @@ type Config struct {
 	// croit l'IP du visiteur transmise par Next (sinon toutes les requêtes
 	// rendues par Next viendraient de la même IP pour le rate limiting)
 	InternalAPIKey string
+
+	// Alertes par email
+	SiteURL        string // pour les liens dans les emails
+	EmailProvider  string // "log" (affiche l'email, en local) ou "brevo"
+	BrevoAPIKey    string
+	AlertFromEmail string
 	// Départements dont on garde l'historique des prix.
 	// nil veut dire toute la France.
 	HistoryDepartments []string
@@ -50,6 +56,10 @@ func Load() (Config, error) {
 	cfg.TrustProxy = getEnv("TRUST_PROXY", "false") == "true"
 	cfg.JWTSecret = getEnv("JWT_SECRET", "")
 	cfg.InternalAPIKey = getEnv("INTERNAL_API_KEY", "")
+	cfg.SiteURL = getEnv("SITE_URL", "http://localhost:3000")
+	cfg.EmailProvider = getEnv("EMAIL_PROVIDER", "log")
+	cfg.BrevoAPIKey = getEnv("BREVO_API_KEY", "")
+	cfg.AlertFromEmail = getEnv("ALERT_FROM_EMAIL", "")
 	for _, o := range strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000"), ",") {
 		if o = strings.TrimSpace(o); o != "" {
 			cfg.CORSOrigins = append(cfg.CORSOrigins, o)

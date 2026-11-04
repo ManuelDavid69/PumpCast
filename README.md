@@ -43,6 +43,13 @@ docker compose --profile ml run --rm ml python -m pumpcast_ml.train
 docker compose --profile ml run --rm ml python -m pumpcast_ml.predict
 ```
 
+Vérifier les alertes des utilisateurs et envoyer les emails (en local, `EMAIL_PROVIDER=log` affiche les emails dans la console au lieu de les envoyer) :
+
+```bash
+cd api
+go run ./cmd/alerts
+```
+
 Ouvrir le notebook d'exploration (Jupyter Lab sur http://localhost:8888, le lien avec le token s'affiche dans le terminal) :
 
 ```bash
@@ -125,3 +132,14 @@ Le modèle prévoit la variation du prix de chaque station sur 1 à 7 jours (gra
 - Deux règles d'honnêteté. La courbe de prévision n'affiche que les horizons où le modèle bat la baseline. Les conseils (attends, fais le plein, prix stable) sont jugés sur ce qu'ils font gagner : chaque type est rejoué sur le passé et n'est activé que s'il est assez souvent juste et rentable sur la validation, puis confirmé sur le test.
 
 Les scores détaillés sont sur la page « Modèle » du site.
+
+## Comptes et alertes
+
+- Mots de passe hachés avec bcrypt (coût 12), entre 10 caractères et 72 octets (au-delà, bcrypt ignore la fin sans prévenir).
+- À la connexion, même message d'erreur et même temps de réponse que l'email existe ou non, pour ne pas révéler qui a un compte.
+- Jeton JWT signé en HS256, valable 7 jours. Seul HS256 est accepté (un jeton `alg: none` est refusé, c'est testé).
+- Le jeton est gardé dans un cookie httpOnly par le serveur Next.js, que le JavaScript de la page ne peut pas lire. Next relaie les requêtes du compte vers l'API et vérifie l'origine de chaque requête contre le CSRF.
+- Les erreurs internes (panne de MongoDB...) sont écrites dans les logs mais jamais renvoyées au client.
+- Une alerte envoie un email au moment où sa condition devient vraie (prix sous le seuil, baisse ou hausse prévue), puis plus rien tant qu'elle reste vraie. Les emails partent par Brevo, qui accepte une simple adresse d'envoi vérifiée sans nom de domaine.
+- On peut supprimer son compte à tout moment, avec ses favoris et ses alertes.
+
