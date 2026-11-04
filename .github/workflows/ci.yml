@@ -12,7 +12,10 @@ permissions:
 jobs:
   api:
     name: API Go
-    runs-on: ubuntu-latest
+    # Pas ubuntu-latest : depuis octobre 2026 c'est Ubuntu 26 (noyau 6.19+),
+    # et MongoDB 8.0 refuse de démarrer sur ces noyaux (SERVER-121912).
+    # À repasser sur ubuntu-latest quand une version corrigée de MongoDB sortira.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: api
