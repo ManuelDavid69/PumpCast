@@ -9,11 +9,13 @@ import {
   COMPARE,
   DEPARTMENT_AVERAGES,
   DEPARTMENT_STATS,
+  MODEL_RUNS,
   STATION,
   STATION_HISTORY,
   type ComparedStation,
   type DepartmentAverage,
   type DepartmentStats,
+  type ModelRun,
   type PricePoint,
   type Prediction,
   type StationDetail,
@@ -62,3 +64,12 @@ export async function getCompared(ids: string[], fuel: Fuel, days: number): Prom
   const data = await gqlFetch<{ compareStations: ComparedStation[] }>(COMPARE, { ids, fuel, days });
   return data.compareStations;
 }
+
+export async function getModelRuns(): Promise<ModelRun[]> {
+  "use cache";
+  // Le modèle est réentraîné une fois par semaine : une heure de cache suffit
+  cacheLife("hours");
+  const data = await gqlFetch<{ modelRuns: ModelRun[] }>(MODEL_RUNS);
+  return data.modelRuns;
+}
+

@@ -7,11 +7,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PriceChart } from "@/components/PriceChart";
+import { PredictionPanel } from "@/components/PredictionPanel";
 import { Price } from "@/components/Price";
 import { UpdatedAt } from "@/components/UpdatedAt";
 import { getDepartmentStats, getStation, getStationHistory } from "@/lib/api";
 import { departmentName } from "@/lib/departments";
-import { FUEL_LABELS, FUELS, formatCents, formatCentsAbs, formatName, type Fuel } from "@/lib/format";
+import { FUEL_LABELS, FUEL_CODES, FUELS, formatCents, formatCentsAbs, formatName, type Fuel } from "@/lib/format";
 
 const PERIODS = [30, 90, 365];
 
@@ -99,15 +100,9 @@ async function StationView({ params, searchParams }: PageProps<"/stations/[id]">
               <h2 id="prediction-title" className="text-lg font-semibold">
                 Faire le plein maintenant ou attendre ?
               </h2>
-              {prediction ? (
-                <p className="mt-2 text-[15px]">Prévision disponible (affichage complet en cours de construction).</p>
-              ) : (
-                <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-muted">
-                  Pas encore de prévision pour cette station. Le modèle qui estime le prix des 7 prochains jours est en
-                  cours d&apos;entraînement.
-                </p>
-              )}
-              {current?.price && department && (
+              <PredictionPanel prediction={prediction} fuel={fuel} />
+              {/* Pas besoin de le redire si une raison de la prévision en parle déjà */}
+              {current?.price && department && !prediction?.reasons.some((r) => r.includes("moyenne du département")) && (
                 <p className="mt-3 text-[15px]">
                   {Math.abs(current.price - department.avgPrice) < 0.0005 ? (
                     <>Le {FUEL_LABELS[fuel]} est au prix moyen du département.</>
@@ -159,7 +154,14 @@ async function StationView({ params, searchParams }: PageProps<"/stations/[id]">
               </nav>
             )}
             <div className="rounded border border-line bg-white p-3">
-              <PriceChart series={[{ id: "price", label: FUEL_LABELS[fuel], color: "var(--color-ink)", points: history }]} />
+              <PriceChart
+                series={[{ id: "price", label: FUEL_LABELS[fuel], color: "var(--color-ink)", points: history }]}
+                forecast={
+                  prediction && prediction.horizon.length > 0
+                    ? { start: { date: prediction.baseDate, price: prediction.basePrice }, points: prediction.horizon }
+                    : undefined
+                }
+              />
             </div>
             {first !== undefined && last !== undefined && (
               <p className="mt-2 text-sm text-muted">
@@ -179,7 +181,10 @@ async function StationView({ params, searchParams }: PageProps<"/stations/[id]">
                   const p = station.currentPrices.find((c) => c.fuel === f)!;
                   return (
                     <li key={f} className="flex items-baseline justify-between gap-3 border-b border-white/15 pb-2 last:border-0">
-                      <span className="text-[15px] font-medium">{FUEL_LABELS[f]}</span>
+                      <span className="text-[15px] font-medium">
+                        {FUEL_LABELS[f]}
+                        {FUEL_CODES[f] && <span className="ml-1.5 text-xs font-normal text-white/60">{FUEL_CODES[f]}</span>}
+                      </span>
                       {p.price && !p.outOfStock ? (
                         <Price value={p.price} className="text-4xl font-semibold" />
                       ) : (

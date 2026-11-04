@@ -14,6 +14,15 @@ export const FUEL_LABELS: Record<Fuel, string> = {
   GPLC: "GPLc",
 };
 
+// Codes européens affichés sur les pistolets depuis 2018. On ne les montre que
+// quand ils apportent quelque chose (pas "E10 E10").
+export const FUEL_CODES: Partial<Record<Fuel, string>> = {
+  GAZOLE: "B7",
+  SP95: "E5",
+  SP98: "E5",
+  GPLC: "LPG",
+};
+
 /**
  * Découpe un prix comme sur les panneaux des stations : "2,14" en grand
  * et le millième à part ("9"), affiché plus petit.
@@ -55,6 +64,13 @@ export function formatShortDate(isoDay: string): string {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+/** "2025-11-01" vers "1er novembre 2025". */
+export function formatLongDate(isoDay: string): string {
+  const d = new Date(`${isoDay}T12:00:00`);
+  const text = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return d.getDate() === 1 ? text.replace(/^1 /, "1er ") : text;
+}
+
 /** Date et heure de mise à jour, relative si c'est récent. */
 export function formatUpdatedAt(iso: string, now: Date = new Date()): string {
   const d = new Date(iso);
@@ -67,7 +83,8 @@ export function formatUpdatedAt(iso: string, now: Date = new Date()): string {
   if (sameDay) {
     return `aujourd'hui à ${time}`;
   }
-  return `le ${d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
+  const day = d.getDate() === 1 ? "1er" : String(d.getDate());
+  return `le ${day} ${d.toLocaleDateString("fr-FR", { month: "long" })}`;
 }
 
 /**

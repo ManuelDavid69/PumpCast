@@ -3,6 +3,7 @@ import {
   formatCents,
   formatCentsAbs,
   formatDistance,
+  formatLongDate,
   formatName,
   formatPrice,
   formatUpdatedAt,
@@ -80,6 +81,16 @@ describe("formatUpdatedAt", () => {
   });
 
   it("donne la date pour un autre jour", () => {
-    expect(formatUpdatedAt("2026-11-01T08:30:00+01:00", now)).toBe("le 1 novembre");
+    expect(formatUpdatedAt("2026-11-01T08:30:00+01:00", now)).toBe("le 1er novembre");
+  });
+});
+
+describe("formatLongDate", () => {
+  it("écrit le jour en entier avec l'année", () => {
+    expect(formatLongDate("2026-11-04")).toBe("4 novembre 2026");
+  });
+
+  it("écrit 1er pour le premier du mois", () => {
+    expect(formatLongDate("2025-11-01")).toBe("1er novembre 2025");
   });
 });

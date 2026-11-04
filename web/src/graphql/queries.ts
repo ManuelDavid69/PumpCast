@@ -81,6 +81,9 @@ export const STATION_HISTORY = /* GraphQL */ `
       id
       priceHistory(fuel: $fuel, days: $days) { date price }
       prediction(fuel: $fuel) {
+        baseDate
+        basePrice
+        generatedAt
         recommendation
         confidence
         reasons
@@ -91,7 +94,11 @@ export const STATION_HISTORY = /* GraphQL */ `
 `;
 
 export type Prediction = {
-  recommendation: "FILL_NOW" | "WAIT" | "STABLE";
+  baseDate: string;
+  basePrice: number;
+  generatedAt: string;
+  // null : pas assez fiable aujourd'hui, l'appli ne conseille rien
+  recommendation: "FILL_NOW" | "WAIT" | "STABLE" | null;
   confidence: number;
   reasons: string[];
   horizon: { date: string; price: number; low: number; high: number }[];
@@ -153,3 +160,76 @@ export const DEPARTMENT_STATS = /* GraphQL */ `
     }
   }
 `;
+
+export type HorizonScore = {
+  horizon: number;
+  maeBaseline: number;
+  maeRidge: number;
+  maeModel: number;
+  intervalCoverage: number;
+  beatsBaseline: boolean;
+  periods: { name: string; maeBaseline: number; maeModel: number }[];
+};
+
+export type ModelRun = {
+  modelVersion: string;
+  trainedAt: string;
+  trainStart: string;
+  trainEnd: string;
+  testStart: string;
+  testEnd: string;
+  allowedHorizons: number[];
+  horizons: HorizonScore[];
+  recommendations: {
+    accuracy: number | null;
+    waitCount: number;
+    fillNowCount: number;
+    stableCount: number;
+    noneCount: number;
+    waitAccuracy: number | null;
+    fillNowAccuracy: number | null;
+    stableAccuracy: number | null;
+    waitGainCents: number | null;
+    fillNowGainCents: number | null;
+  };
+  featureImportance: { feature: string; maeIncrease: number }[];
+};
+
+// Page "Comment marche le modèle" : le dernier entraînement en détail, les
+// précédents pour l'historique des versions
+export const MODEL_RUNS = /* GraphQL */ `
+  query ModelRuns {
+    modelRuns(limit: 10) {
+      modelVersion
+      trainedAt
+      trainStart
+      trainEnd
+      testStart
+      testEnd
+      allowedHorizons
+      horizons {
+        horizon
+        maeBaseline
+        maeRidge
+        maeModel
+        intervalCoverage
+        beatsBaseline
+        periods { name maeBaseline maeModel }
+      }
+      recommendations {
+        accuracy
+        waitCount
+        fillNowCount
+        stableCount
+        noneCount
+        waitAccuracy
+        fillNowAccuracy
+        stableAccuracy
+        waitGainCents
+        fillNowGainCents
+      }
+      featureImportance { feature maeIncrease }
+    }
+  }
+`;
+
