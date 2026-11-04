@@ -8,6 +8,7 @@ package ratelimit
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"log"
 	"net"
@@ -24,6 +25,8 @@ type Limiter struct {
 	limit  int
 	window time.Duration
 	now    func() time.Time
+	// Clé partagée avec le serveur Next.js (voir Middleware). Vide = désactivé.
+	InternalKey string
 }
 
 func New(rdb *redis.Client, perMinute int) *Limiter {
@@ -60,6 +63,14 @@ func (l *Limiter) Allow(ctx context.Context, ip string) (Result, error) {
 	return res, nil
 }
 
+// isInternal vérifie la clé interne. subtle.ConstantTimeCompare compare en
+// temps constant : on ne peut pas deviner la clé caractère par caractère en
+// mesurant le temps de réponse.
+func (l *Limiter) isInternal(r *http.Request) bool {
+	got := r.Header.Get("X-Internal-Key")
+	return l.InternalKey != "" && got != "" && subtle.ConstantTimeCompare([]byte(got), []byte(l.InternalKey)) == 1
+}
+
 // ClientIP renvoie l'IP du client.
 //
 // Sans proxy devant l'API, c'est l'adresse de la connexion. Derrière un proxy
@@ -87,7 +98,19 @@ func ClientIP(r *http.Request, trustProxy bool) string {
 func (l *Limiter) Middleware(trustProxy bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			res, err := l.Allow(r.Context(), ClientIP(r, trustProxy))
+			ip := ClientIP(r, trustProxy)
+			// Requête du serveur Next.js avec la bonne clé : on compte sur l'IP du
+			// visiteur qu'il transmet. Sans IP transmise (pages rendues et mises en
+			// cache par Next), la requête n'est pas limitée.
+			if l.isInternal(r) {
+				forwarded := strings.TrimSpace(r.Header.Get("X-Client-IP"))
+				if forwarded == "" {
+					next.ServeHTTP(w, r)
+					return
+				}
+				ip = forwarded
+			}
+			res, err := l.Allow(r.Context(), ip)
 			if err != nil {
 				log.Printf("rate limit indisponible, requête acceptée : %v", err)
 				next.ServeHTTP(w, r)

@@ -9,6 +9,18 @@ import (
 	"strconv"
 )
 
+type AlertInput struct {
+	StationID string    `json:"stationId"`
+	Fuel      Fuel      `json:"fuel"`
+	Type      AlertType `json:"type"`
+	Threshold *float64  `json:"threshold,omitempty"`
+}
+
+type AuthPayload struct {
+	Token string `json:"token"`
+	User  *User  `json:"user"`
+}
+
 type CurrentPrice struct {
 	Fuel       Fuel     `json:"fuel"`
 	Price      *float64 `json:"price,omitempty"`
@@ -51,6 +63,9 @@ type ModelRun struct {
 	RecommendationRules    []*RecommendationRule   `json:"recommendationRules"`
 	RecommendationCriteria *RecommendationCriteria `json:"recommendationCriteria"`
 	FeatureImportance      []*FeatureImportance    `json:"featureImportance"`
+}
+
+type Mutation struct {
 }
 
 type OpeningDay struct {
@@ -134,6 +149,63 @@ type RecommendationStats struct {
 type TimeSlot struct {
 	Open  string `json:"open"`
 	Close string `json:"close"`
+}
+
+type AlertType string
+
+const (
+	AlertTypeThreshold     AlertType = "THRESHOLD"
+	AlertTypePredictedDrop AlertType = "PREDICTED_DROP"
+	AlertTypePredictedRise AlertType = "PREDICTED_RISE"
+)
+
+var AllAlertType = []AlertType{
+	AlertTypeThreshold,
+	AlertTypePredictedDrop,
+	AlertTypePredictedRise,
+}
+
+func (e AlertType) IsValid() bool {
+	switch e {
+	case AlertTypeThreshold, AlertTypePredictedDrop, AlertTypePredictedRise:
+		return true
+	}
+	return false
+}
+
+func (e AlertType) String() string {
+	return string(e)
+}
+
+func (e *AlertType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AlertType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AlertType", str)
+	}
+	return nil
+}
+
+func (e AlertType) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AlertType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AlertType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type Fuel string

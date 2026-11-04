@@ -8,13 +8,13 @@ package graph
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"slices"
 
 	"github.com/ManuelDavid69/pumpcast/api/graph/generated"
 	"github.com/ManuelDavid69/pumpcast/api/graph/model"
+	"github.com/ManuelDavid69/pumpcast/api/internal/apperr"
 	"github.com/ManuelDavid69/pumpcast/api/internal/cache"
 	"github.com/ManuelDavid69/pumpcast/api/internal/dataloader"
 )
@@ -89,13 +89,13 @@ func (r *queryResolver) StationsNear(ctx context.Context, lat float64, lng float
 	}
 	switch {
 	case lat < -90 || lat > 90 || lng < -180 || lng > 180:
-		return nil, errors.New("coordonnées invalides")
+		return nil, apperr.New("coordonnées invalides")
 	case radius <= 0 || radius > maxRadiusKm:
-		return nil, fmt.Errorf("radiusKm doit être entre 0 et %.0f", maxRadiusKm)
+		return nil, apperr.New("radiusKm doit être entre 0 et %.0f", maxRadiusKm)
 	case max < 1 || max > maxLimit:
-		return nil, fmt.Errorf("limit doit être entre 1 et %d", maxLimit)
+		return nil, apperr.New("limit doit être entre 1 et %d", maxLimit)
 	case order == model.StationSortPrice && fuel == nil:
-		return nil, errors.New("le tri par prix demande un carburant (paramètre fuel)")
+		return nil, apperr.New("le tri par prix demande un carburant (paramètre fuel)")
 	}
 
 	// On récupère plus de stations que demandé : certaines seront écartées
@@ -181,7 +181,7 @@ func (r *queryResolver) Station(ctx context.Context, id string) (*model.Station,
 // CompareStations is the resolver for the compareStations field.
 func (r *queryResolver) CompareStations(ctx context.Context, ids []string) ([]*model.Station, error) {
 	if len(ids) == 0 || len(ids) > maxCompared {
-		return nil, fmt.Errorf("il faut entre 1 et %d stations à comparer", maxCompared)
+		return nil, apperr.New("il faut entre 1 et %d stations à comparer", maxCompared)
 	}
 	found, err := r.Stations.ByIDs(ctx, ids)
 	if err != nil {
@@ -254,7 +254,7 @@ func (r *queryResolver) ModelRuns(ctx context.Context, limit *int) ([]*model.Mod
 		n = *limit
 	}
 	if n < 1 || n > 50 {
-		return nil, errors.New("limit doit être entre 1 et 50")
+		return nil, apperr.New("limit doit être entre 1 et 50")
 	}
 	runs, err := r.Predictions.Runs(ctx, n)
 	if err != nil {
@@ -283,7 +283,7 @@ func (r *stationResolver) PriceHistory(ctx context.Context, obj *model.Station, 
 		n = *days
 	}
 	if n < 1 || n > maxHistoryDays {
-		return nil, fmt.Errorf("days doit être entre 1 et %d", maxHistoryDays)
+		return nil, apperr.New("days doit être entre 1 et %d", maxHistoryDays)
 	}
 	since := r.today().AddDate(0, 0, -(n - 1))
 	list, err := dataloader.For(ctx).History.Load(ctx, dataloader.HistoryKey{StationID: obj.ID, Fuel: string(fuel), Since: since})

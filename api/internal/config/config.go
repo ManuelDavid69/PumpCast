@@ -23,6 +23,13 @@ type Config struct {
 	TrustProxy bool
 	// Origines autorisées à appeler l'API depuis un navigateur (le front)
 	CORSOrigins []string
+	// Secret qui signe les jetons de connexion. Vide en local : un secret
+	// aléatoire est généré au démarrage (les connexions sautent à chaque redémarrage).
+	JWTSecret string
+	// Clé partagée avec le serveur Next.js : quand elle est présente, l'API
+	// croit l'IP du visiteur transmise par Next (sinon toutes les requêtes
+	// rendues par Next viendraient de la même IP pour le rate limiting)
+	InternalAPIKey string
 	// Départements dont on garde l'historique des prix.
 	// nil veut dire toute la France.
 	HistoryDepartments []string
@@ -41,6 +48,8 @@ func Load() (Config, error) {
 
 	cfg.EnablePlayground = getEnv("ENABLE_PLAYGROUND", "true") == "true"
 	cfg.TrustProxy = getEnv("TRUST_PROXY", "false") == "true"
+	cfg.JWTSecret = getEnv("JWT_SECRET", "")
+	cfg.InternalAPIKey = getEnv("INTERNAL_API_KEY", "")
 	for _, o := range strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000"), ",") {
 		if o = strings.TrimSpace(o); o != "" {
 			cfg.CORSOrigins = append(cfg.CORSOrigins, o)

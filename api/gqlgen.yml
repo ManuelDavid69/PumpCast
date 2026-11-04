@@ -41,6 +41,12 @@ models:
         resolver: true
       prediction:
         resolver: true
+  User:
+    fields:
+      favorites:
+        resolver: true
+      alerts:
+        resolver: true
   DepartmentStats:
     fields:
       cheapestStation:

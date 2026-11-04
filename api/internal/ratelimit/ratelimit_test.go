@@ -157,3 +157,46 @@ func TestMiddlewareRedisDown(t *testing.T) {
 		t.Errorf("la requête aurait dû passer (code %d)", w.Code)
 	}
 }
+
+func TestMiddlewareInternalKey(t *testing.T) {
+	rdb := testRedis(t)
+	l := New(rdb, 1)
+	l.InternalKey = "cle-interne-de-test"
+	h := l.Middleware(false)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	send := func(key, clientIP string) int {
+		r := httptest.NewRequest(http.MethodPost, "/graphql", nil)
+		r.RemoteAddr = "10.0.0.1:1234" // le serveur Next.js
+		if key != "" {
+			r.Header.Set("X-Internal-Key", key)
+		}
+		if clientIP != "" {
+			r.Header.Set("X-Client-IP", clientIP)
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code
+	}
+
+	// Deux visiteurs différents derrière Next : chacun a sa propre limite
+	if send("cle-interne-de-test", "1.1.1.1") != 200 || send("cle-interne-de-test", "2.2.2.2") != 200 {
+		t.Fatal("chaque visiteur doit avoir sa propre limite")
+	}
+	if send("cle-interne-de-test", "1.1.1.1") != http.StatusTooManyRequests {
+		t.Error("le 2e appel du même visiteur doit être limité")
+	}
+	// Page rendue par Next sans visiteur précis : pas limitée
+	for i := 0; i < 3; i++ {
+		if send("cle-interne-de-test", "") != 200 {
+			t.Fatal("les appels internes sans IP ne doivent pas être limités")
+		}
+	}
+	// Mauvaise clé : X-Client-IP est ignoré, on compte sur l'adresse de connexion
+	if send("fausse-cle", "3.3.3.3") != 200 {
+		t.Fatal("1er appel de 10.0.0.1")
+	}
+	if send("fausse-cle", "4.4.4.4") != http.StatusTooManyRequests {
+		t.Error("changer X-Client-IP sans la clé ne doit pas contourner la limite")
+	}
+}

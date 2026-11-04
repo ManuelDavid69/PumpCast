@@ -57,6 +57,15 @@ func ensureIndexes(ctx context.Context, database *mongo.Database) error {
 			// Historique d'une station pour un carburant, trié par date
 			{Keys: bson.D{{Key: "meta.station_id", Value: 1}, {Key: "meta.fuel", Value: 1}, {Key: "ts", Value: 1}}},
 		},
+		"users": {
+			// Un seul compte par email, garanti par la base même si deux
+			// inscriptions arrivent en même temps
+			{Keys: bson.D{{Key: "email", Value: 1}}, Options: options.Index().SetUnique(true)},
+		},
+		"alerts": {
+			{Keys: bson.D{{Key: "user_id", Value: 1}}},
+			{Keys: bson.D{{Key: "active", Value: 1}}},
+		},
 		"predictions": {
 			// Dernière prédiction d'une station pour un carburant
 			{Keys: bson.D{{Key: "station_id", Value: 1}, {Key: "fuel", Value: 1}, {Key: "generated_at", Value: -1}}},

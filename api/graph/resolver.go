@@ -3,6 +3,7 @@
 package graph
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -10,11 +11,15 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/ManuelDavid69/pumpcast/api/graph/model"
+	"github.com/ManuelDavid69/pumpcast/api/internal/alerts"
+	"github.com/ManuelDavid69/pumpcast/api/internal/apperr"
+	"github.com/ManuelDavid69/pumpcast/api/internal/auth"
 	"github.com/ManuelDavid69/pumpcast/api/internal/ingest"
 	"github.com/ManuelDavid69/pumpcast/api/internal/predictions"
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
+	"github.com/ManuelDavid69/pumpcast/api/internal/users"
 )
 
 // Limites des paramètres, pour qu'une seule requête ne puisse pas faire
@@ -38,6 +43,9 @@ type Resolver struct {
 	Stats       *stats.Repository
 	Predictions *predictions.Repository
 	Redis       *redis.Client
+	Users       *users.Repository
+	AlertRepo   *alerts.Repository
+	Tokens      *auth.Tokens
 	Now         func() time.Time
 }
 
@@ -132,11 +140,11 @@ func toPrediction(p *predictions.Prediction) (*model.Prediction, error) {
 func normalizeDepartment(raw string) (string, error) {
 	d := strings.ToUpper(strings.TrimSpace(raw))
 	if len(d) < 2 || len(d) > 3 {
-		return "", fmt.Errorf("département invalide : %q", raw)
+		return "", apperr.New("département invalide : %q", raw)
 	}
 	for _, c := range d {
 		if (c < '0' || c > '9') && c != 'A' && c != 'B' {
-			return "", fmt.Errorf("département invalide : %q", raw)
+			return "", apperr.New("département invalide : %q", raw)
 		}
 	}
 	return d, nil
@@ -236,6 +244,72 @@ func toModelRun(run predictions.ModelRun) *model.ModelRun {
 	}
 	for _, f := range run.Metrics.FeatureImportance {
 		out.FeatureImportance = append(out.FeatureImportance, &model.FeatureImportance{Feature: f.Feature, MaeIncrease: f.MAEIncrease})
+	}
+	return out
+}
+
+var alertTypes = map[model.AlertType]string{
+	model.AlertTypeThreshold:     alerts.TypeThreshold,
+	model.AlertTypePredictedDrop: alerts.TypePredictedDrop,
+	model.AlertTypePredictedRise: alerts.TypePredictedRise,
+}
+
+// loggedIn renvoie l'utilisateur connecté ou une erreur montrable au client.
+func loggedIn(ctx context.Context) (string, error) {
+	id, err := auth.UserID(ctx)
+	if err != nil {
+		return "", apperr.New("%s", err.Error())
+	}
+	return id, nil
+}
+
+func (r *Resolver) authPayload(u *users.User) (*model.AuthPayload, error) {
+	token, err := r.Tokens.Sign(u.ID.Hex())
+	if err != nil {
+		return nil, err
+	}
+	return &model.AuthPayload{Token: token, User: toUser(u)}, nil
+}
+
+// ensureStation refuse un identifiant de station inconnu (favori ou alerte)
+func (r *Resolver) ensureStation(ctx context.Context, id string) error {
+	found, err := r.Stations.ByIDs(ctx, []string{id})
+	if err != nil {
+		return err
+	}
+	if _, ok := found[id]; !ok {
+		return apperr.New("station inconnue : %s", id)
+	}
+	return nil
+}
+
+func toUser(u *users.User) *model.User {
+	favs := u.Favorites
+	if favs == nil {
+		favs = []string{}
+	}
+	return &model.User{ID: u.ID.Hex(), Email: u.Email, CreatedAt: u.CreatedAt.Format(time.RFC3339), FavoriteIDs: favs}
+}
+
+func toAlert(a alerts.Alert, stations map[string]stations.Station) *model.Alert {
+	out := &model.Alert{
+		ID:        a.ID.Hex(),
+		Fuel:      model.Fuel(a.Fuel),
+		Threshold: a.Threshold,
+		Active:    a.Active,
+		CreatedAt: a.CreatedAt.Format(time.RFC3339),
+	}
+	for t, name := range alertTypes {
+		if name == a.Type {
+			out.Type = t
+		}
+	}
+	if a.LastSentAt != nil {
+		sent := a.LastSentAt.In(ingest.Paris).Format(time.RFC3339)
+		out.LastSentAt = &sent
+	}
+	if doc, ok := stations[a.StationID]; ok {
+		out.Station = model.StationFromDoc(doc)
 	}
 	return out
 }

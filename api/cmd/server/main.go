@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 
 	"github.com/ManuelDavid69/pumpcast/api/graph"
+	"github.com/ManuelDavid69/pumpcast/api/internal/alerts"
+	"github.com/ManuelDavid69/pumpcast/api/internal/auth"
 	"github.com/ManuelDavid69/pumpcast/api/internal/cache"
 	"github.com/ManuelDavid69/pumpcast/api/internal/config"
 	"github.com/ManuelDavid69/pumpcast/api/internal/dataloader"
@@ -27,6 +29,7 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/ratelimit"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
+	"github.com/ManuelDavid69/pumpcast/api/internal/users"
 )
 
 func main() {
@@ -87,6 +90,20 @@ func run() error {
 		"redis": func(ctx context.Context) error { return redisClient.Ping(ctx).Err() },
 	}))
 
+	secret := cfg.JWTSecret
+	if secret == "" {
+		// Pratique en local, mais en production le secret doit être fixe :
+		// sinon tout le monde est déconnecté à chaque redémarrage
+		if secret, err = auth.RandomSecret(); err != nil {
+			return err
+		}
+		log.Println("JWT_SECRET vide : secret aléatoire généré, les connexions ne survivront pas à un redémarrage")
+	}
+	tokens, err := auth.NewTokens(secret)
+	if err != nil {
+		return err
+	}
+
 	current := prices.NewCurrentCache(redisClient)
 	preds := predictions.NewRepository(database)
 	resolver := &graph.Resolver{
@@ -95,9 +112,13 @@ func run() error {
 		Stats:       stats.NewRepository(database),
 		Predictions: preds,
 		Redis:       redisClient,
+		Users:       users.NewRepository(database),
+		AlertRepo:   alerts.NewRepository(database),
+		Tokens:      tokens,
 		Now:         time.Now,
 	}
 	limiter := ratelimit.New(redisClient, cfg.RateLimitPerMinute)
+	limiter.InternalKey = cfg.InternalAPIKey
 	r.With(limiter.Middleware(cfg.TrustProxy)).Handle("/graphql", graph.NewHandler(resolver, dataloader.Sources{
 		Current:     current,
 		History:     prices.NewHistoryRepository(database),

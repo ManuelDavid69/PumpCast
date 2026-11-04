@@ -1,0 +1,62 @@
+# Comptes, favoris et alertes.
+#
+# Les requêtes de ce fichier demandent d'être connecté (en-tête
+# "Authorization: Bearer <jeton>"), sauf register et login.
+
+enum AlertType {
+  # Le prix passe sous un seuil choisi
+  THRESHOLD
+  # Le modèle conseille d'attendre (baisse prévue)
+  PREDICTED_DROP
+  # Le modèle conseille de faire le plein (hausse prévue)
+  PREDICTED_RISE
+}
+
+type User {
+  id: ID!
+  email: String!
+  createdAt: String!
+  favorites: [Station!]!
+  alerts: [Alert!]!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type Alert {
+  id: ID!
+  # Nulle si la station a disparu du flux depuis la création de l'alerte
+  station: Station
+  fuel: Fuel!
+  type: AlertType!
+  # Seulement pour THRESHOLD, en euros
+  threshold: Float
+  active: Boolean!
+  lastSentAt: String
+  createdAt: String!
+}
+
+input AlertInput {
+  stationId: ID!
+  fuel: Fuel!
+  type: AlertType!
+  threshold: Float
+}
+
+extend type Query {
+  # Nul si personne n'est connecté
+  me: User
+}
+
+type Mutation {
+  register(email: String!, password: String!): AuthPayload!
+  login(email: String!, password: String!): AuthPayload!
+  addFavorite(stationId: ID!): User!
+  removeFavorite(stationId: ID!): User!
+  createAlert(input: AlertInput!): Alert!
+  deleteAlert(id: ID!): Boolean!
+  # Supprime le compte et ses alertes. Le mot de passe est redemandé.
+  deleteAccount(password: String!): Boolean!
+}

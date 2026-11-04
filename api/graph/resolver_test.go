@@ -14,6 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
+	"github.com/ManuelDavid69/pumpcast/api/internal/alerts"
+	"github.com/ManuelDavid69/pumpcast/api/internal/auth"
 	"github.com/ManuelDavid69/pumpcast/api/internal/cache"
 	"github.com/ManuelDavid69/pumpcast/api/internal/dataloader"
 	"github.com/ManuelDavid69/pumpcast/api/internal/db"
@@ -22,6 +24,7 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
+	"github.com/ManuelDavid69/pumpcast/api/internal/users"
 )
 
 // commandCounter compte les commandes envoyées à MongoDB, par type et par
@@ -138,7 +141,14 @@ func setup(t *testing.T) *testEnv {
 	}
 
 	preds := predictions.NewRepository(database)
+	tokens, err := auth.NewTokens("secret-de-test-pour-les-jetons-jwt-32c")
+	if err != nil {
+		t.Fatal(err)
+	}
 	res := &Resolver{
+		Users:       users.NewRepository(database),
+		AlertRepo:   alerts.NewRepository(database),
+		Tokens:      tokens,
 		Stations:    stRepo,
 		Current:     current,
 		Stats:       stats.NewRepository(database),
