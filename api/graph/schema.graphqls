@@ -96,9 +96,12 @@ type Prediction {
   basePrice: Float!
   # Seulement les horizons où le modèle bat la baseline "le prix ne bouge pas"
   horizon: [PredictedPoint!]!
-  # Nulle quand aucun horizon des 3 prochains jours n'est assez fiable :
-  # on préfère ne rien conseiller que conseiller au hasard
+  # Nulle quand le modèle n'a pas de conseil assez sûr, ou que ce type de
+  # conseil n'a pas fait gagner d'argent sur les données passées
   recommendation: Recommendation
+  # Jour et prix visés par le conseil (dans les 3 prochains jours). Pas forcément
+  # sur la courbe, qui n'affiche que les horizons qui battent la baseline.
+  adviceTarget: PredictedPoint
   confidence: Float!
   reasons: [String!]!
   modelVersion: String!
@@ -133,10 +136,15 @@ type ModelRun {
   trainEnd: String!
   testStart: String!
   testEnd: String!
-  # Horizons utilisés par l'appli (ceux qui battent la baseline)
+  # Horizons affichés sur la courbe de prévision (ceux qui battent la baseline)
   allowedHorizons: [Int!]!
   horizons: [HorizonScore!]!
+  # Conseils rejoués sur le test, avec seulement les types activés
   recommendations: RecommendationStats!
+  # Types de conseil activés, et pour chacun le verdict validation / test
+  enabledRecommendations: [Recommendation!]!
+  recommendationRules: [RecommendationRule!]!
+  recommendationCriteria: RecommendationCriteria!
   featureImportance: [FeatureImportance!]!
 }
 
@@ -171,6 +179,28 @@ type RecommendationStats {
   # Gain moyen en centimes par litre en suivant le conseil
   waitGainCents: Float
   fillNowGainCents: Float
+}
+
+# Un type de conseil n'est activé que s'il fait ses preuves sur la validation
+# puis que le test le confirme
+type RecommendationRule {
+  kind: Recommendation!
+  enabled: Boolean!
+  passesValidation: Boolean!
+  passesTest: Boolean!
+  validationCount: Int!
+  validationAccuracy: Float
+  validationGainCents: Float
+  testCount: Int!
+  testAccuracy: Float
+  testGainCents: Float
+}
+
+type RecommendationCriteria {
+  minCountValidation: Int!
+  minAccuracyValidation: Float!
+  minCountTest: Int!
+  minAccuracyTest: Float!
 }
 
 type FeatureImportance {

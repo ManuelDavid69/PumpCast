@@ -107,6 +107,9 @@ func toPrediction(p *predictions.Prediction) (*model.Prediction, error) {
 		GeneratedAt:  p.GeneratedAt.In(ingest.Paris).Format(time.RFC3339),
 		Horizon:      make([]*model.PredictedPoint, len(p.Horizon)),
 	}
+	if t := p.AdviceTarget; t != nil {
+		out.AdviceTarget = &model.PredictedPoint{Date: formatDay(t.Date), Price: t.Price, Low: t.Low, High: t.High}
+	}
 	// Pas de recommandation quand le modèle n'est pas assez fiable
 	if p.Recommendation != nil {
 		rec, ok := recommendations[*p.Recommendation]
@@ -181,6 +184,37 @@ func toModelRun(run predictions.ModelRun) *model.ModelRun {
 	}
 	if out.AllowedHorizons == nil {
 		out.AllowedHorizons = []int{}
+	}
+
+	// Règle des conseils : pour chaque type, le verdict et les chiffres qui l'expliquent
+	c := run.Policy.Criteria
+	out.RecommendationCriteria = &model.RecommendationCriteria{
+		MinCountValidation:    c.MinCountValidation,
+		MinAccuracyValidation: c.MinAccuracyValidation,
+		MinCountTest:          c.MinCountTest,
+		MinAccuracyTest:       c.MinAccuracyTest,
+	}
+	out.EnabledRecommendations = []model.Recommendation{}
+	out.RecommendationRules = []*model.RecommendationRule{}
+	val, test := run.Metrics.RecommendationsValidation, run.Metrics.RecommendationsTestAll
+	for _, kind := range []string{"wait", "fill_now", "stable"} {
+		d := run.Policy.Decision[kind]
+		rec := recommendations[kind]
+		if d.Enabled {
+			out.EnabledRecommendations = append(out.EnabledRecommendations, rec)
+		}
+		out.RecommendationRules = append(out.RecommendationRules, &model.RecommendationRule{
+			Kind:                rec,
+			Enabled:             d.Enabled,
+			PassesValidation:    d.Validation,
+			PassesTest:          d.Test,
+			ValidationCount:     val.Counts[kind],
+			ValidationAccuracy:  val.AccuracyByKind[kind],
+			ValidationGainCents: val.AvgGainCents[kind],
+			TestCount:           test.Counts[kind],
+			TestAccuracy:        test.AccuracyByKind[kind],
+			TestGainCents:       test.AvgGainCents[kind],
+		})
 	}
 	for _, h := range run.Metrics.Horizons {
 		score := &model.HorizonScore{

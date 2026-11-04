@@ -38,16 +38,19 @@ type HorizonScore struct {
 }
 
 type ModelRun struct {
-	ModelVersion      string               `json:"modelVersion"`
-	TrainedAt         string               `json:"trainedAt"`
-	TrainStart        string               `json:"trainStart"`
-	TrainEnd          string               `json:"trainEnd"`
-	TestStart         string               `json:"testStart"`
-	TestEnd           string               `json:"testEnd"`
-	AllowedHorizons   []int                `json:"allowedHorizons"`
-	Horizons          []*HorizonScore      `json:"horizons"`
-	Recommendations   *RecommendationStats `json:"recommendations"`
-	FeatureImportance []*FeatureImportance `json:"featureImportance"`
+	ModelVersion           string                  `json:"modelVersion"`
+	TrainedAt              string                  `json:"trainedAt"`
+	TrainStart             string                  `json:"trainStart"`
+	TrainEnd               string                  `json:"trainEnd"`
+	TestStart              string                  `json:"testStart"`
+	TestEnd                string                  `json:"testEnd"`
+	AllowedHorizons        []int                   `json:"allowedHorizons"`
+	Horizons               []*HorizonScore         `json:"horizons"`
+	Recommendations        *RecommendationStats    `json:"recommendations"`
+	EnabledRecommendations []Recommendation        `json:"enabledRecommendations"`
+	RecommendationRules    []*RecommendationRule   `json:"recommendationRules"`
+	RecommendationCriteria *RecommendationCriteria `json:"recommendationCriteria"`
+	FeatureImportance      []*FeatureImportance    `json:"featureImportance"`
 }
 
 type OpeningDay struct {
@@ -80,6 +83,7 @@ type Prediction struct {
 	BasePrice      float64           `json:"basePrice"`
 	Horizon        []*PredictedPoint `json:"horizon"`
 	Recommendation *Recommendation   `json:"recommendation,omitempty"`
+	AdviceTarget   *PredictedPoint   `json:"adviceTarget,omitempty"`
 	Confidence     float64           `json:"confidence"`
 	Reasons        []string          `json:"reasons"`
 	ModelVersion   string            `json:"modelVersion"`
@@ -92,6 +96,26 @@ type PricePoint struct {
 }
 
 type Query struct {
+}
+
+type RecommendationCriteria struct {
+	MinCountValidation    int     `json:"minCountValidation"`
+	MinAccuracyValidation float64 `json:"minAccuracyValidation"`
+	MinCountTest          int     `json:"minCountTest"`
+	MinAccuracyTest       float64 `json:"minAccuracyTest"`
+}
+
+type RecommendationRule struct {
+	Kind                Recommendation `json:"kind"`
+	Enabled             bool           `json:"enabled"`
+	PassesValidation    bool           `json:"passesValidation"`
+	PassesTest          bool           `json:"passesTest"`
+	ValidationCount     int            `json:"validationCount"`
+	ValidationAccuracy  *float64       `json:"validationAccuracy,omitempty"`
+	ValidationGainCents *float64       `json:"validationGainCents,omitempty"`
+	TestCount           int            `json:"testCount"`
+	TestAccuracy        *float64       `json:"testAccuracy,omitempty"`
+	TestGainCents       *float64       `json:"testGainCents,omitempty"`
 }
 
 type RecommendationStats struct {

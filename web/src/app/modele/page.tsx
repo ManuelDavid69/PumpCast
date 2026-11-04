@@ -46,6 +46,19 @@ const FEATURE_LABELS: Record<string, string> = {
 };
 
 // Espace insécable avant l'unité : "1,576 c" ne doit pas être coupé en fin de ligne
+const KIND_NAMES = { WAIT: "Attends", FILL_NOW: "Fais le plein", STABLE: "Prix stable" } as const;
+
+function ruleCell(count: number, accuracy: number | null, gain: number | null): string {
+  if (count === 0 || accuracy === null) {
+    return "jamais donné";
+  }
+  const parts = [`${count.toLocaleString("fr-FR")} fois`, `${Math.round(accuracy * 100)} % justes`];
+  if (gain !== null) {
+    parts.push(`${gain >= 0 ? "+" : "−"}${Math.abs(gain).toFixed(1).replace(".", ",")} c/L`);
+  }
+  return parts.join(", ");
+}
+
 const cents = (v: number, digits = 3) => `${v.toFixed(digits).replace(".", ",")} c`;
 const percent = (v: number) => `${Math.round(v * 100)} %`;
 
@@ -76,8 +89,9 @@ async function ModelView() {
 function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
   const h3 = run.horizons.find((h) => h.horizon === 3);
   const best = [...run.horizons].sort((a, b) => a.maeModel / a.maeBaseline - b.maeModel / b.maeBaseline)[0];
-  const allowedShort = run.allowedHorizons.filter((h) => h <= 3);
   const rec = run.recommendations;
+  const crit = run.recommendationCriteria;
+  const enabledNames = run.enabledRecommendations.map((k) => `« ${KIND_NAMES[k]} »`);
   const maxImportance = Math.max(...run.featureImportance.map((f) => f.maeIncrease), 1e-9);
 
   return (
@@ -108,21 +122,25 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           </p>
         )}
         <p className="mt-2 max-w-prose">
-          {allowedShort.length === 0 ? (
-            <>
-              Comme le modèle ne bat pas cette prévision naïve sur les 3 prochains jours, l&apos;appli ne donne pas de
-              conseil « attends » ou « fais le plein » pour l&apos;instant. Elle le dit sur chaque fiche station au lieu
-              d&apos;inventer une certitude.
-            </>
-          ) : (
-            <>
-              L&apos;appli ne donne des conseils qu&apos;à partir des jours où le modèle bat la prévision naïve
-              (J+{allowedShort.join(", J+")}).
-            </>
-          )}
+          La courbe de prévision des fiches stations n&apos;affiche que les jours où le modèle fait mieux que cette
+          prévision naïve
+          {run.allowedHorizons.length > 0 ? <> (J+{run.allowedHorizons.join(", J+")})</> : <> (aucun pour l&apos;instant)</>}.
           {best && best.maeModel < best.maeBaseline && (
             <> Le meilleur résultat est à J+{best.horizon} : {percent(1 - best.maeModel / best.maeBaseline)} d&apos;erreur en moins.</>
           )}
+        </p>
+        <p className="mt-2 max-w-prose">
+          Pour les conseils, la bonne question n&apos;est pas l&apos;erreur moyenne mais : est-ce que les suivre fait
+          gagner de l&apos;argent ?{" "}
+          {enabledNames.length > 0 ? (
+            <>Aujourd&apos;hui l&apos;appli donne les conseils {enabledNames.join(", ")}.</>
+          ) : (
+            <>Aujourd&apos;hui aucun type de conseil n&apos;a passé le test, l&apos;appli n&apos;en donne donc pas.</>
+          )}{" "}
+          <a href="#conseils" className="underline">
+            Le détail est plus bas
+          </a>
+          .
         </p>
       </section>
 
@@ -140,7 +158,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
                 <th scope="col" className="py-2 pr-3 text-right font-medium">Régression linéaire</th>
                 <th scope="col" className="py-2 pr-3 text-right font-medium">Modèle retenu</th>
                 <th scope="col" className="py-2 pr-3 text-right font-medium">Fourchette juste</th>
-                <th scope="col" className="py-2 text-right font-medium">Utilisé</th>
+                <th scope="col" className="py-2 text-right font-medium">Sur la courbe</th>
               </tr>
             </thead>
             <tbody>
@@ -182,12 +200,63 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
         </section>
       )}
 
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">Et si on avait suivi les conseils ?</h2>
+      <section id="conseils" className="mt-8 scroll-mt-6">
+        <h2 className="text-xl font-semibold">Quand l&apos;appli donne un conseil</h2>
+        <p className="mt-2 max-w-prose">
+          Chaque type de conseil est rejoué sur des milliers de situations passées : si quelqu&apos;un l&apos;avait suivi,
+          aurait-il payé moins cher ? Un conseil n&apos;est activé que s&apos;il passe deux épreuves.
+        </p>
+        <ul className="mt-2 max-w-prose list-disc space-y-1 pl-5">
+          <li>
+            Sur la validation (mai à octobre 2025, la période qui sert à faire les choix) : donné au moins{" "}
+            {crit.minCountValidation} fois, juste dans au moins {percent(crit.minAccuracyValidation)} des cas, et pour
+            « attends » et « fais le plein », un gain moyen positif.
+          </li>
+          <li>
+            Sur le test (des jours jamais utilisés pour décider) : il doit le confirmer, avec au moins {crit.minCountTest}{" "}
+            cas, {percent(crit.minAccuracyTest)} de conseils justes et toujours un gain positif.
+          </li>
+        </ul>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-left text-[15px] tabular-nums">
+            <thead className="border-b border-ink text-sm">
+              <tr>
+                <th scope="col" className="py-2 pr-3 font-medium">Conseil</th>
+                <th scope="col" className="py-2 pr-3 text-right font-medium">Validation</th>
+                <th scope="col" className="py-2 pr-3 text-right font-medium">Test</th>
+                <th scope="col" className="py-2 text-right font-medium">Activé</th>
+              </tr>
+            </thead>
+            <tbody>
+              {run.recommendationRules.map((r) => (
+                <tr key={r.kind} className="border-b border-line align-top">
+                  <th scope="row" className="py-2 pr-3 text-left font-medium">
+                    {KIND_NAMES[r.kind]}
+                  </th>
+                  <td className={`py-2 pr-3 text-right ${r.passesValidation ? "" : "text-muted"}`}>
+                    {ruleCell(r.validationCount, r.validationAccuracy, r.validationGainCents)}
+                  </td>
+                  <td className={`py-2 pr-3 text-right ${r.passesTest ? "" : "text-muted"}`}>
+                    {ruleCell(r.testCount, r.testAccuracy, r.testGainCents)}
+                  </td>
+                  <td className={`py-2 text-right font-semibold ${r.enabled ? "text-route" : ""}`}>
+                    {r.enabled ? "oui" : r.passesValidation ? "non, pas confirmé au test" : "non"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 max-w-prose text-sm text-muted">
+          Nombre de fois où le conseil aurait été donné, part de conseils justes, et gain moyen par litre en le suivant.
+          Le modèle ne conseille d&apos;agir que quand il est sûr de lui, c&apos;est pour ça que « attends » et « fais le
+          plein » sont rares.
+        </p>
+
+        <h3 className="mt-6 font-semibold">Et si on avait suivi les conseils activés ?</h3>
         {rec.accuracy === null ? (
           <p className="mt-2 max-w-prose">
-            Sur la période de test, aucun conseil n&apos;aurait été donné, pour la raison expliquée plus haut. Pas de chiffre
-            à afficher, donc.
+            Sur la période de test, aucun conseil activé n&apos;aurait été donné. Pas de chiffre à afficher, donc.
           </p>
         ) : (
           <ul className="mt-2 space-y-1">

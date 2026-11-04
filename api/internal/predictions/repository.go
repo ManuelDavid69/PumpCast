@@ -31,6 +31,8 @@ type Prediction struct {
 	BasePrice    float64   `bson:"base_price"`
 	ModelVersion string    `bson:"model_version"`
 	Horizon      []Point   `bson:"horizon"`
+	// Jour et prix visés par le conseil, nil s'il n'y a pas de conseil
+	AdviceTarget *Point `bson:"advice_target"`
 	// fill_now, wait, stable, ou nil quand le modèle n'est pas assez fiable
 	Recommendation *string  `bson:"recommendation"`
 	Confidence     float64  `bson:"confidence"`
@@ -70,17 +72,41 @@ type Period struct {
 	End   time.Time `bson:"end"`
 }
 
+// KindDecision dit si un type de conseil passe la validation, le test, et s'il est activé.
+type KindDecision struct {
+	Validation bool `bson:"validation"`
+	Test       bool `bson:"test"`
+	Enabled    bool `bson:"enabled"`
+}
+
+type Criteria struct {
+	MinCountValidation    int     `bson:"min_count_validation"`
+	MinAccuracyValidation float64 `bson:"min_accuracy_validation"`
+	MinCountTest          int     `bson:"min_count_test"`
+	MinAccuracyTest       float64 `bson:"min_accuracy_test"`
+}
+
+// RecommendationPolicy est la règle d'activation des conseils, décidée à l'entraînement.
+type RecommendationPolicy struct {
+	EnabledKinds []string                `bson:"enabled_kinds"`
+	Decision     map[string]KindDecision `bson:"decision"`
+	Criteria     Criteria                `bson:"criteria"`
+}
+
 // ModelRun est un entraînement du modèle et ses scores sur la période de test.
 type ModelRun struct {
-	ModelVersion    string    `bson:"model_version"`
-	TrainedAt       time.Time `bson:"trained_at"`
-	TrainPeriod     Period    `bson:"train_period"`
-	TestPeriod      Period    `bson:"test_period"`
-	AllowedHorizons []int     `bson:"allowed_horizons"`
+	ModelVersion    string               `bson:"model_version"`
+	TrainedAt       time.Time            `bson:"trained_at"`
+	TrainPeriod     Period               `bson:"train_period"`
+	TestPeriod      Period               `bson:"test_period"`
+	AllowedHorizons []int                `bson:"allowed_horizons"`
+	Policy          RecommendationPolicy `bson:"recommendation_policy"`
 	Metrics         struct {
-		Horizons          []HorizonScore      `bson:"horizons"`
-		Recommendations   RecommendationStats `bson:"recommendations"`
-		FeatureImportance []FeatureImportance `bson:"feature_importance"`
+		Horizons                  []HorizonScore      `bson:"horizons"`
+		Recommendations           RecommendationStats `bson:"recommendations"`
+		RecommendationsValidation RecommendationStats `bson:"recommendations_validation"`
+		RecommendationsTestAll    RecommendationStats `bson:"recommendations_test_all_kinds"`
+		FeatureImportance         []FeatureImportance `bson:"feature_importance"`
 	} `bson:"metrics"`
 }
 

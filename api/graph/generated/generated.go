@@ -77,16 +77,19 @@ type ComplexityRoot struct {
 	}
 
 	ModelRun struct {
-		AllowedHorizons   func(childComplexity int) int
-		FeatureImportance func(childComplexity int) int
-		Horizons          func(childComplexity int) int
-		ModelVersion      func(childComplexity int) int
-		Recommendations   func(childComplexity int) int
-		TestEnd           func(childComplexity int) int
-		TestStart         func(childComplexity int) int
-		TrainEnd          func(childComplexity int) int
-		TrainStart        func(childComplexity int) int
-		TrainedAt         func(childComplexity int) int
+		AllowedHorizons        func(childComplexity int) int
+		EnabledRecommendations func(childComplexity int) int
+		FeatureImportance      func(childComplexity int) int
+		Horizons               func(childComplexity int) int
+		ModelVersion           func(childComplexity int) int
+		RecommendationCriteria func(childComplexity int) int
+		RecommendationRules    func(childComplexity int) int
+		Recommendations        func(childComplexity int) int
+		TestEnd                func(childComplexity int) int
+		TestStart              func(childComplexity int) int
+		TrainEnd               func(childComplexity int) int
+		TrainStart             func(childComplexity int) int
+		TrainedAt              func(childComplexity int) int
 	}
 
 	OpeningDay struct {
@@ -115,6 +118,7 @@ type ComplexityRoot struct {
 	}
 
 	Prediction struct {
+		AdviceTarget   func(childComplexity int) int
 		BaseDate       func(childComplexity int) int
 		BasePrice      func(childComplexity int) int
 		Confidence     func(childComplexity int) int
@@ -137,6 +141,26 @@ type ComplexityRoot struct {
 		ModelRuns          func(childComplexity int, limit *int) int
 		Station            func(childComplexity int, id string) int
 		StationsNear       func(childComplexity int, lat float64, lng float64, radiusKm *float64, fuel *model.Fuel, sort *model.StationSort, limit *int) int
+	}
+
+	RecommendationCriteria struct {
+		MinAccuracyTest       func(childComplexity int) int
+		MinAccuracyValidation func(childComplexity int) int
+		MinCountTest          func(childComplexity int) int
+		MinCountValidation    func(childComplexity int) int
+	}
+
+	RecommendationRule struct {
+		Enabled             func(childComplexity int) int
+		Kind                func(childComplexity int) int
+		PassesTest          func(childComplexity int) int
+		PassesValidation    func(childComplexity int) int
+		TestAccuracy        func(childComplexity int) int
+		TestCount           func(childComplexity int) int
+		TestGainCents       func(childComplexity int) int
+		ValidationAccuracy  func(childComplexity int) int
+		ValidationCount     func(childComplexity int) int
+		ValidationGainCents func(childComplexity int) int
 	}
 
 	RecommendationStats struct {
@@ -376,6 +400,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ModelRun.AllowedHorizons(childComplexity), true
+	case "ModelRun.enabledRecommendations":
+		if e.ComplexityRoot.ModelRun.EnabledRecommendations == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.EnabledRecommendations(childComplexity), true
 	case "ModelRun.featureImportance":
 		if e.ComplexityRoot.ModelRun.FeatureImportance == nil {
 			break
@@ -394,6 +424,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ModelRun.ModelVersion(childComplexity), true
+	case "ModelRun.recommendationCriteria":
+		if e.ComplexityRoot.ModelRun.RecommendationCriteria == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.RecommendationCriteria(childComplexity), true
+	case "ModelRun.recommendationRules":
+		if e.ComplexityRoot.ModelRun.RecommendationRules == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.RecommendationRules(childComplexity), true
 	case "ModelRun.recommendations":
 		if e.ComplexityRoot.ModelRun.Recommendations == nil {
 			break
@@ -513,6 +555,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.PredictedPoint.Price(childComplexity), true
 
+	case "Prediction.adviceTarget":
+		if e.ComplexityRoot.Prediction.AdviceTarget == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Prediction.AdviceTarget(childComplexity), true
 	case "Prediction.baseDate":
 		if e.ComplexityRoot.Prediction.BaseDate == nil {
 			break
@@ -642,6 +690,92 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.StationsNear(childComplexity, args["lat"].(float64), args["lng"].(float64), args["radiusKm"].(*float64), args["fuel"].(*model.Fuel), args["sort"].(*model.StationSort), args["limit"].(*int)), true
+
+	case "RecommendationCriteria.minAccuracyTest":
+		if e.ComplexityRoot.RecommendationCriteria.MinAccuracyTest == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationCriteria.MinAccuracyTest(childComplexity), true
+	case "RecommendationCriteria.minAccuracyValidation":
+		if e.ComplexityRoot.RecommendationCriteria.MinAccuracyValidation == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationCriteria.MinAccuracyValidation(childComplexity), true
+	case "RecommendationCriteria.minCountTest":
+		if e.ComplexityRoot.RecommendationCriteria.MinCountTest == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationCriteria.MinCountTest(childComplexity), true
+	case "RecommendationCriteria.minCountValidation":
+		if e.ComplexityRoot.RecommendationCriteria.MinCountValidation == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationCriteria.MinCountValidation(childComplexity), true
+
+	case "RecommendationRule.enabled":
+		if e.ComplexityRoot.RecommendationRule.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.Enabled(childComplexity), true
+	case "RecommendationRule.kind":
+		if e.ComplexityRoot.RecommendationRule.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.Kind(childComplexity), true
+	case "RecommendationRule.passesTest":
+		if e.ComplexityRoot.RecommendationRule.PassesTest == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.PassesTest(childComplexity), true
+	case "RecommendationRule.passesValidation":
+		if e.ComplexityRoot.RecommendationRule.PassesValidation == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.PassesValidation(childComplexity), true
+	case "RecommendationRule.testAccuracy":
+		if e.ComplexityRoot.RecommendationRule.TestAccuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.TestAccuracy(childComplexity), true
+	case "RecommendationRule.testCount":
+		if e.ComplexityRoot.RecommendationRule.TestCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.TestCount(childComplexity), true
+	case "RecommendationRule.testGainCents":
+		if e.ComplexityRoot.RecommendationRule.TestGainCents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.TestGainCents(childComplexity), true
+	case "RecommendationRule.validationAccuracy":
+		if e.ComplexityRoot.RecommendationRule.ValidationAccuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.ValidationAccuracy(childComplexity), true
+	case "RecommendationRule.validationCount":
+		if e.ComplexityRoot.RecommendationRule.ValidationCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.ValidationCount(childComplexity), true
+	case "RecommendationRule.validationGainCents":
+		if e.ComplexityRoot.RecommendationRule.ValidationGainCents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationRule.ValidationGainCents(childComplexity), true
 
 	case "RecommendationStats.accuracy":
 		if e.ComplexityRoot.RecommendationStats.Accuracy == nil {
@@ -979,9 +1113,12 @@ type Prediction {
   basePrice: Float!
   # Seulement les horizons où le modèle bat la baseline "le prix ne bouge pas"
   horizon: [PredictedPoint!]!
-  # Nulle quand aucun horizon des 3 prochains jours n'est assez fiable :
-  # on préfère ne rien conseiller que conseiller au hasard
+  # Nulle quand le modèle n'a pas de conseil assez sûr, ou que ce type de
+  # conseil n'a pas fait gagner d'argent sur les données passées
   recommendation: Recommendation
+  # Jour et prix visés par le conseil (dans les 3 prochains jours). Pas forcément
+  # sur la courbe, qui n'affiche que les horizons qui battent la baseline.
+  adviceTarget: PredictedPoint
   confidence: Float!
   reasons: [String!]!
   modelVersion: String!
@@ -1016,10 +1153,15 @@ type ModelRun {
   trainEnd: String!
   testStart: String!
   testEnd: String!
-  # Horizons utilisés par l'appli (ceux qui battent la baseline)
+  # Horizons affichés sur la courbe de prévision (ceux qui battent la baseline)
   allowedHorizons: [Int!]!
   horizons: [HorizonScore!]!
+  # Conseils rejoués sur le test, avec seulement les types activés
   recommendations: RecommendationStats!
+  # Types de conseil activés, et pour chacun le verdict validation / test
+  enabledRecommendations: [Recommendation!]!
+  recommendationRules: [RecommendationRule!]!
+  recommendationCriteria: RecommendationCriteria!
   featureImportance: [FeatureImportance!]!
 }
 
@@ -1054,6 +1196,28 @@ type RecommendationStats {
   # Gain moyen en centimes par litre en suivant le conseil
   waitGainCents: Float
   fillNowGainCents: Float
+}
+
+# Un type de conseil n'est activé que s'il fait ses preuves sur la validation
+# puis que le test le confirme
+type RecommendationRule {
+  kind: Recommendation!
+  enabled: Boolean!
+  passesValidation: Boolean!
+  passesTest: Boolean!
+  validationCount: Int!
+  validationAccuracy: Float
+  validationGainCents: Float
+  testCount: Int!
+  testAccuracy: Float
+  testGainCents: Float
+}
+
+type RecommendationCriteria {
+  minCountValidation: Int!
+  minAccuracyValidation: Float!
+  minCountTest: Int!
+  minAccuracyTest: Float!
 }
 
 type FeatureImportance {
@@ -1190,6 +1354,12 @@ func (ec *executionContext) childFields_ModelRun(ctx context.Context, field grap
 		return ec.fieldContext_ModelRun_horizons(ctx, field)
 	case "recommendations":
 		return ec.fieldContext_ModelRun_recommendations(ctx, field)
+	case "enabledRecommendations":
+		return ec.fieldContext_ModelRun_enabledRecommendations(ctx, field)
+	case "recommendationRules":
+		return ec.fieldContext_ModelRun_recommendationRules(ctx, field)
+	case "recommendationCriteria":
+		return ec.fieldContext_ModelRun_recommendationCriteria(ctx, field)
 	case "featureImportance":
 		return ec.fieldContext_ModelRun_featureImportance(ctx, field)
 	}
@@ -1256,6 +1426,8 @@ func (ec *executionContext) childFields_Prediction(ctx context.Context, field gr
 		return ec.fieldContext_Prediction_horizon(ctx, field)
 	case "recommendation":
 		return ec.fieldContext_Prediction_recommendation(ctx, field)
+	case "adviceTarget":
+		return ec.fieldContext_Prediction_adviceTarget(ctx, field)
 	case "confidence":
 		return ec.fieldContext_Prediction_confidence(ctx, field)
 	case "reasons":
@@ -1276,6 +1448,46 @@ func (ec *executionContext) childFields_PricePoint(ctx context.Context, field gr
 		return ec.fieldContext_PricePoint_price(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type PricePoint", field.Name)
+}
+
+func (ec *executionContext) childFields_RecommendationCriteria(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "minCountValidation":
+		return ec.fieldContext_RecommendationCriteria_minCountValidation(ctx, field)
+	case "minAccuracyValidation":
+		return ec.fieldContext_RecommendationCriteria_minAccuracyValidation(ctx, field)
+	case "minCountTest":
+		return ec.fieldContext_RecommendationCriteria_minCountTest(ctx, field)
+	case "minAccuracyTest":
+		return ec.fieldContext_RecommendationCriteria_minAccuracyTest(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RecommendationCriteria", field.Name)
+}
+
+func (ec *executionContext) childFields_RecommendationRule(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "kind":
+		return ec.fieldContext_RecommendationRule_kind(ctx, field)
+	case "enabled":
+		return ec.fieldContext_RecommendationRule_enabled(ctx, field)
+	case "passesValidation":
+		return ec.fieldContext_RecommendationRule_passesValidation(ctx, field)
+	case "passesTest":
+		return ec.fieldContext_RecommendationRule_passesTest(ctx, field)
+	case "validationCount":
+		return ec.fieldContext_RecommendationRule_validationCount(ctx, field)
+	case "validationAccuracy":
+		return ec.fieldContext_RecommendationRule_validationAccuracy(ctx, field)
+	case "validationGainCents":
+		return ec.fieldContext_RecommendationRule_validationGainCents(ctx, field)
+	case "testCount":
+		return ec.fieldContext_RecommendationRule_testCount(ctx, field)
+	case "testAccuracy":
+		return ec.fieldContext_RecommendationRule_testAccuracy(ctx, field)
+	case "testGainCents":
+		return ec.fieldContext_RecommendationRule_testGainCents(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RecommendationRule", field.Name)
 }
 
 func (ec *executionContext) childFields_RecommendationStats(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2547,6 +2759,93 @@ func (ec *executionContext) fieldContext_ModelRun_recommendations(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _ModelRun_enabledRecommendations(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_enabledRecommendations(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EnabledRecommendations, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []model.Recommendation) graphql.Marshaler {
+			return ec.marshalNRecommendation2ᚕgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_enabledRecommendations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "Recommendation")
+}
+
+func (ec *executionContext) _ModelRun_recommendationRules(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_recommendationRules(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RecommendationRules, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.RecommendationRule) graphql.Marshaler {
+			return ec.marshalNRecommendationRule2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationRuleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_recommendationRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelRun",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RecommendationRule(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelRun_recommendationCriteria(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_recommendationCriteria(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RecommendationCriteria, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.RecommendationCriteria) graphql.Marshaler {
+			return ec.marshalNRecommendationCriteria2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationCriteria(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_recommendationCriteria(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelRun",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RecommendationCriteria(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ModelRun_featureImportance(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2995,6 +3294,38 @@ func (ec *executionContext) _Prediction_recommendation(ctx context.Context, fiel
 }
 func (ec *executionContext) fieldContext_Prediction_recommendation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Prediction", field, false, false, "Recommendation")
+}
+
+func (ec *executionContext) _Prediction_adviceTarget(ctx context.Context, field graphql.CollectedField, obj *model.Prediction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Prediction_adviceTarget(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AdviceTarget, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.PredictedPoint) graphql.Marshaler {
+			return ec.marshalOPredictedPoint2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPredictedPoint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Prediction_adviceTarget(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Prediction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PredictedPoint(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Prediction_confidence(ctx context.Context, field graphql.CollectedField, obj *model.Prediction) (ret graphql.Marshaler) {
@@ -3473,6 +3804,328 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCriteria_minCountValidation(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCriteria) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationCriteria_minCountValidation(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MinCountValidation, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationCriteria_minCountValidation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationCriteria", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationCriteria_minAccuracyValidation(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCriteria) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationCriteria_minAccuracyValidation(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MinAccuracyValidation, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationCriteria_minAccuracyValidation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationCriteria", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationCriteria_minCountTest(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCriteria) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationCriteria_minCountTest(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MinCountTest, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationCriteria_minCountTest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationCriteria", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationCriteria_minAccuracyTest(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCriteria) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationCriteria_minAccuracyTest(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MinAccuracyTest, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationCriteria_minAccuracyTest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationCriteria", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationRule_kind(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_kind(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.Recommendation) graphql.Marshaler {
+			return ec.marshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Recommendation")
+}
+
+func (ec *executionContext) _RecommendationRule_enabled(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_enabled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Enabled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Boolean")
+}
+
+func (ec *executionContext) _RecommendationRule_passesValidation(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_passesValidation(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PassesValidation, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_passesValidation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Boolean")
+}
+
+func (ec *executionContext) _RecommendationRule_passesTest(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_passesTest(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PassesTest, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_passesTest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Boolean")
+}
+
+func (ec *executionContext) _RecommendationRule_validationCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_validationCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ValidationCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_validationCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationRule_validationAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_validationAccuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ValidationAccuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_validationAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationRule_validationGainCents(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_validationGainCents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ValidationGainCents, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_validationGainCents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationRule_testCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_testCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TestCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_testCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationRule_testAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_testAccuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TestAccuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_testAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationRule_testGainCents(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationRule_testGainCents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TestGainCents, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationRule_testGainCents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationRule", field, false, false, "Float")
 }
 
 func (ec *executionContext) _RecommendationStats_accuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
@@ -5537,6 +6190,21 @@ func (ec *executionContext) _ModelRun(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "enabledRecommendations":
+			out.Values[i] = ec._ModelRun_enabledRecommendations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recommendationRules":
+			out.Values[i] = ec._ModelRun_recommendationRules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recommendationCriteria":
+			out.Values[i] = ec._ModelRun_recommendationCriteria(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "featureImportance":
 			out.Values[i] = ec._ModelRun_featureImportance(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5767,6 +6435,11 @@ func (ec *executionContext) _Prediction(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "adviceTarget":
+			out.Values[i] = ec._Prediction_adviceTarget(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "confidence":
 			out.Values[i] = ec._Prediction_confidence(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5910,6 +6583,132 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var recommendationCriteriaImplementors = []string{"RecommendationCriteria"}
+
+func (ec *executionContext) _RecommendationCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationCriteria) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendationCriteriaImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendationCriteria")
+		case "minCountValidation":
+			out.Values[i] = ec._RecommendationCriteria_minCountValidation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minAccuracyValidation":
+			out.Values[i] = ec._RecommendationCriteria_minAccuracyValidation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minCountTest":
+			out.Values[i] = ec._RecommendationCriteria_minCountTest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "minAccuracyTest":
+			out.Values[i] = ec._RecommendationCriteria_minAccuracyTest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var recommendationRuleImplementors = []string{"RecommendationRule"}
+
+func (ec *executionContext) _RecommendationRule(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendationRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendationRule")
+		case "kind":
+			out.Values[i] = ec._RecommendationRule_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._RecommendationRule_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "passesValidation":
+			out.Values[i] = ec._RecommendationRule_passesValidation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "passesTest":
+			out.Values[i] = ec._RecommendationRule_passesTest(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "validationCount":
+			out.Values[i] = ec._RecommendationRule_validationCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "validationAccuracy":
+			out.Values[i] = ec._RecommendationRule_validationAccuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "validationGainCents":
+			out.Values[i] = ec._RecommendationRule_validationGainCents(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "testCount":
+			out.Values[i] = ec._RecommendationRule_testCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "testAccuracy":
+			out.Values[i] = ec._RecommendationRule_testAccuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "testGainCents":
+			out.Values[i] = ec._RecommendationRule_testGainCents(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6855,6 +7654,78 @@ func (ec *executionContext) marshalNPricePoint2ᚖgithubᚗcomᚋManuelDavid69�
 	return ec._PricePoint(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, v any) (model.Recommendation, error) {
+	var res model.Recommendation
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, sel ast.SelectionSet, v model.Recommendation) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNRecommendation2ᚕgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationᚄ(ctx context.Context, v any) ([]model.Recommendation, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]model.Recommendation, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNRecommendation2ᚕgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Recommendation) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRecommendationCriteria2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationCriteria(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationCriteria) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "RecommendationCriteria!")
+		return graphql.Null
+	}
+	return ec._RecommendationCriteria(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRecommendationRule2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecommendationRule) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRecommendationRule2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationRule(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRecommendationRule2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationRule(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationRule) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "RecommendationRule!")
+		return graphql.Null
+	}
+	return ec._RecommendationRule(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNRecommendationStats2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationStats(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationStats) graphql.Marshaler {
 	if v == nil {
 		graphql.AddInvalidNullError(ctx, "RecommendationStats!")
@@ -7182,6 +8053,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOPredictedPoint2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPredictedPoint(ctx context.Context, sel ast.SelectionSet, v *model.PredictedPoint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PredictedPoint(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPrediction2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPrediction(ctx context.Context, sel ast.SelectionSet, v *model.Prediction) graphql.Marshaler {

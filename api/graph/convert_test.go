@@ -75,3 +75,41 @@ func TestToModelRun(t *testing.T) {
 		t.Error("les listes doivent être vides et pas nil")
 	}
 }
+
+func TestToModelRunPolicy(t *testing.T) {
+	acc, gain := 0.74, 4.5
+	var run predictions.ModelRun
+	run.Policy = predictions.RecommendationPolicy{
+		EnabledKinds: []string{"wait"},
+		Decision: map[string]predictions.KindDecision{
+			"wait":     {Validation: true, Test: true, Enabled: true},
+			"fill_now": {Validation: true, Test: false, Enabled: false},
+		},
+		Criteria: predictions.Criteria{MinCountValidation: 30, MinAccuracyValidation: 0.6, MinCountTest: 10, MinAccuracyTest: 0.5},
+	}
+	run.Metrics.RecommendationsValidation = predictions.RecommendationStats{
+		Counts:         map[string]int{"wait": 108},
+		AccuracyByKind: map[string]*float64{"wait": &acc},
+		AvgGainCents:   map[string]*float64{"wait": &gain},
+	}
+
+	out := toModelRun(run)
+	if len(out.EnabledRecommendations) != 1 || out.EnabledRecommendations[0] != model.RecommendationWait {
+		t.Fatalf("conseils activés = %v, attendu seulement WAIT", out.EnabledRecommendations)
+	}
+	// Un type de conseil par ligne, toujours dans le même ordre
+	if len(out.RecommendationRules) != 3 || out.RecommendationRules[1].Kind != model.RecommendationFillNow {
+		t.Fatalf("règles = %+v", out.RecommendationRules)
+	}
+	w := out.RecommendationRules[0]
+	if !w.Enabled || w.ValidationCount != 108 || *w.ValidationAccuracy != 0.74 || *w.ValidationGainCents != 4.5 {
+		t.Errorf("règle attends = %+v", w)
+	}
+	f := out.RecommendationRules[1]
+	if f.Enabled || !f.PassesValidation || f.PassesTest {
+		t.Errorf("fais le plein devrait être refusé par le test : %+v", f)
+	}
+	if out.RecommendationCriteria.MinAccuracyValidation != 0.6 || out.RecommendationCriteria.MinCountTest != 10 {
+		t.Errorf("critères = %+v", out.RecommendationCriteria)
+	}
+}

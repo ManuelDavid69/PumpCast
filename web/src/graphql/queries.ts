@@ -85,6 +85,7 @@ export const STATION_HISTORY = /* GraphQL */ `
         basePrice
         generatedAt
         recommendation
+        adviceTarget { date price low high }
         confidence
         reasons
         horizon { date price low high }
@@ -97,8 +98,9 @@ export type Prediction = {
   baseDate: string;
   basePrice: number;
   generatedAt: string;
-  // null : pas assez fiable aujourd'hui, l'appli ne conseille rien
+  // null : pas de conseil assez sûr aujourd'hui, ou type de conseil désactivé
   recommendation: "FILL_NOW" | "WAIT" | "STABLE" | null;
+  adviceTarget: { date: string; price: number; low: number; high: number } | null;
   confidence: number;
   reasons: string[];
   horizon: { date: string; price: number; low: number; high: number }[];
@@ -193,6 +195,25 @@ export type ModelRun = {
     fillNowGainCents: number | null;
   };
   featureImportance: { feature: string; maeIncrease: number }[];
+  enabledRecommendations: ("FILL_NOW" | "WAIT" | "STABLE")[];
+  recommendationRules: {
+    kind: "FILL_NOW" | "WAIT" | "STABLE";
+    enabled: boolean;
+    passesValidation: boolean;
+    passesTest: boolean;
+    validationCount: number;
+    validationAccuracy: number | null;
+    validationGainCents: number | null;
+    testCount: number;
+    testAccuracy: number | null;
+    testGainCents: number | null;
+  }[];
+  recommendationCriteria: {
+    minCountValidation: number;
+    minAccuracyValidation: number;
+    minCountTest: number;
+    minAccuracyTest: number;
+  };
 };
 
 // Page "Comment marche le modèle" : le dernier entraînement en détail, les
@@ -229,6 +250,20 @@ export const MODEL_RUNS = /* GraphQL */ `
         fillNowGainCents
       }
       featureImportance { feature maeIncrease }
+      enabledRecommendations
+      recommendationRules {
+        kind
+        enabled
+        passesValidation
+        passesTest
+        validationCount
+        validationAccuracy
+        validationGainCents
+        testCount
+        testAccuracy
+        testGainCents
+      }
+      recommendationCriteria { minCountValidation minAccuracyValidation minCountTest minAccuracyTest }
     }
   }
 `;
