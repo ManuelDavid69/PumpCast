@@ -36,7 +36,16 @@ jobs:
         run: go tool gqlgen generate && git diff --exit-code -- graph
       - run: go vet ./...
       - name: Tests
-        run: go test -count=1 ./...
+        # En cas d'échec, les tests en erreur sont affichés comme annotations
+        # GitHub : on voit la cause sans ouvrir les logs
+        run: |
+          set -o pipefail
+          if ! go test -count=1 ./... 2>&1 | tee test.log; then
+            grep -E -- "--- FAIL|_test\.go:[0-9]+|panic:" test.log | head -20 | while read -r line; do
+              echo "::error::$line"
+            done
+            exit 1
+          fi
         env:
           MONGO_TEST_URI: mongodb://localhost:27017
           REDIS_TEST_URL: redis://localhost:6379/15
