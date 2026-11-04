@@ -17,6 +17,9 @@ concurrency:
 
 jobs:
   train:
+    # Ne tourne qu'une fois le déploiement configuré (variable SITE_URL remplie),
+    # sinon le workflow échouerait toutes les heures faute de base de données
+    if: vars.SITE_URL != ''
     runs-on: ubuntu-latest
     timeout-minutes: 120
     defaults:
