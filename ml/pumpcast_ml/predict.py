@@ -42,8 +42,13 @@ def main(argv: list[str] | None = None) -> None:
     run = db["model_runs"].find_one({"model_version": version})
     if run is None:
         raise SystemExit(f"modèle {version} absent de model_runs, relancer l'entraînement")
+    # Horizons affichés sur la courbe : ceux qui battent la baseline
     allowed = set(run.get("allowed_horizons", []))
+    # Types de conseil activés : ceux qui ont fait gagner de l'argent sur la
+    # validation et que le test a confirmés
+    enabled = set(run.get("recommendation_policy", {}).get("enabled_kinds", []))
     settings = Settings(**{k: run["settings"][k] for k in ("move_cents", "min_confidence", "window_days")})
+    window = set(range(1, settings.window_days + 1))
 
     start = (datetime.now(timezone.utc) - timedelta(days=HISTORY_DAYS)).date()
     stations = data.load_stations(db)
@@ -76,7 +81,10 @@ def main(argv: list[str] | None = None) -> None:
         base_day = today.date.iloc[0]
         for i, row in enumerate(today.itertuples(index=False)):
             per_h = [HorizonPrediction(h, float(preds[h][1, i]), float(preds[h][0, i]), float(preds[h][2, i])) for h in features.HORIZONS]
-            rec = recommend(per_h, allowed, settings)
+            rec = recommend(per_h, window, settings)
+            if rec is not None and rec.kind not in enabled:
+                # Ce type de conseil n'a pas fait ses preuves : on ne le donne pas
+                rec = None
             price = round(float(row.price), 3)  # float32 dans le DataFrame, on revient au millième
             docs.append(
                 {
@@ -97,6 +105,18 @@ def main(argv: list[str] | None = None) -> None:
                         for p in per_h
                         if p.horizon in allowed
                     ],
+                    # Jour et prix visés par le conseil (dans les 3 prochains jours),
+                    # indépendants des horizons affichés sur la courbe
+                    "advice_target": (
+                        {
+                            "date": as_mongo_date((base_day + pd.Timedelta(days=rec.horizon)).date()),
+                            "price": round(price + per_h[rec.horizon - 1].delta / 100, 4),
+                            "low": round(price + per_h[rec.horizon - 1].low / 100, 4),
+                            "high": round(price + per_h[rec.horizon - 1].high / 100, 4),
+                        }
+                        if rec
+                        else None
+                    ),
                     "recommendation": rec.kind if rec else None,
                     "confidence": rec.confidence if rec else 0.0,
                     "reasons": reasons({k: float(getattr(row, k)) for k in ("nat_trend7", "dep_gap", "brent_d14", "days_since_change") if not pd.isna(getattr(row, k))}),

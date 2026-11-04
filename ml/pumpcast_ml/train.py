@@ -11,8 +11,13 @@ Déroulé :
        sur la page du modèle. On ne règle rien en le regardant.
 3. Pour chaque horizon h (J+1 à J+7) : baseline, Ridge, HistGradientBoosting,
    et deux modèles quantiles (10 % et 90 %) pour la fourchette.
-4. Règle d'honnêteté : un horizon qui ne bat pas la baseline sur le test
-   n'est pas utilisé par l'appli.
+4. Deux règles d'honnêteté :
+     - la courbe de prévision n'affiche que les horizons qui battent la
+       baseline sur le test (un prix prévu moins juste que "rien ne bouge"
+       serait trompeur) ;
+     - un type de conseil ("attends", "fais le plein", "stable") n'est activé
+       que s'il a fait gagner de l'argent sur la validation et que le test le
+       confirme (voir evaluate.select_kinds).
 5. Réentraînement sur toutes les données pour les prédictions de la semaine.
 """
 
@@ -50,6 +55,12 @@ HGB_PARAMS = dict(max_iter=250, learning_rate=0.08, max_leaf_nodes=31, min_sampl
 
 # Les deux morceaux de la période de test, très différents : un hiver calme
 # puis une année 2026 agitée (Brent au-dessus de 120 $)
+# Critères d'activation des conseils (voir evaluate.Criteria)
+CRITERIA = evaluate.Criteria()
+
+# Nombre de situations (station, jour) tirées au hasard pour rejouer les conseils
+REPLAY_ROWS = 400_000
+
 TEST_PERIODS = {"nov2025_fev2026": ("2025-11-01", "2026-02-28"), "mars_oct2026": ("2026-03-01", "2100-01-01")}
 
 
@@ -260,26 +271,35 @@ def main(argv: list[str] | None = None) -> None:
             )
             print("Variables les plus importantes (J+3) :", ", ".join(i["feature"] for i in importance[:8]))
 
-    # Diagnostic sur la validation : si on donnait les conseils sans filtrer les
-    # horizons, feraient-ils gagner de l'argent ? Ça répond à une autre question
-    # que la MAE (le sens du prix compte plus que sa valeur exacte).
-    joined_val = pd.concat([val_preds[h] for h in range(1, settings.window_days + 1)], axis=1, join="inner")
-    rec_val_ungated = evaluate.evaluate_recommendations(
-        joined_val.sample(n=min(200_000, len(joined_val)), random_state=0), set(range(1, settings.window_days + 1)), settings
+    # Les conseils sont jugés sur ce qu'ils font gagner, pas sur la MAE : un
+    # modèle peut se tromper autant que la baseline en moyenne et pourtant avoir
+    # raison les rares fois où il annonce une vraie hausse ou une vraie baisse.
+    # On rejoue donc les conseils sur les 3 prochains jours, tous horizons confondus.
+    advice_days = set(range(1, settings.window_days + 1))
+    joined_val = pd.concat([val_preds[h] for h in sorted(advice_days)], axis=1, join="inner")
+    rec_val = evaluate.evaluate_recommendations(
+        joined_val.sample(n=min(REPLAY_ROWS, len(joined_val)), random_state=0), advice_days, settings
     )
-    print("Validation, conseils sans filtre :", rec_val_ungated)
+    print("Conseils rejoués sur la validation :", rec_val)
 
     if args.skip_test:
         return
 
-    # Recommandations rejouées sur la période de test, avec seulement les
-    # horizons qui battent la baseline (règle d'honnêteté)
+    # La courbe de prévision n'affiche que les horizons qui battent la baseline
     allowed = {m["horizon"] for m in horizons_metrics if m["beats_baseline"]}
-    joined = pd.concat([test_preds[h] for h in range(1, settings.window_days + 1)], axis=1, join="inner")
-    rec_eval = evaluate.evaluate_recommendations(joined.sample(n=min(200_000, len(joined)), random_state=0), allowed, settings)
+    print("Horizons affichés sur la courbe :", sorted(allowed))
+
+    # Un type de conseil est activé s'il passe la validation ET que le test le confirme
+    joined = pd.concat([test_preds[h] for h in sorted(advice_days)], axis=1, join="inner")
+    replay_test = joined.sample(n=min(REPLAY_ROWS, len(joined)), random_state=0)
+    rec_test_all = evaluate.evaluate_recommendations(replay_test, advice_days, settings)
+    decision = evaluate.select_kinds(rec_val, rec_test_all, CRITERIA)
+    enabled = {k for k, d in decision.items() if d["enabled"]}
+    # Résultat final sur le test, avec seulement les conseils activés
+    rec_eval = evaluate.evaluate_recommendations(replay_test, advice_days, settings, enabled_kinds=enabled)
     horizons_metrics[settings.window_days - 1]["recommendation_accuracy"] = rec_eval["accuracy"]
-    print("Horizons utilisés par l'appli :", sorted(allowed))
-    print("Recommandations sur la période de test :", rec_eval)
+    print("Décision par type de conseil :", decision)
+    print("Conseils rejoués sur le test (types activés) :", rec_eval)
 
     run = {
         "model_version": version,
@@ -290,7 +310,8 @@ def main(argv: list[str] | None = None) -> None:
         "metrics": {
             "horizons": horizons_metrics,
             "recommendations": rec_eval,
-            "validation_recommendations_ungated": rec_val_ungated,
+            "recommendations_validation": rec_val,
+            "recommendations_test_all_kinds": rec_test_all,
             "feature_importance": importance,
             "cleaning": cleaning,
         },
@@ -303,6 +324,16 @@ def main(argv: list[str] | None = None) -> None:
             "features": features.FEATURES,
         },
         "allowed_horizons": sorted(allowed),
+        "recommendation_policy": {
+            "enabled_kinds": sorted(enabled),
+            "decision": decision,
+            "criteria": {
+                "min_count_validation": CRITERIA.min_count_validation,
+                "min_accuracy_validation": CRITERIA.min_accuracy_validation,
+                "min_count_test": CRITERIA.min_count_test,
+                "min_accuracy_test": CRITERIA.min_accuracy_test,
+            },
+        },
     }
 
     if args.no_save:

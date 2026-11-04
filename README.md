@@ -122,6 +122,6 @@ Le modèle prévoit la variation du prix de chaque station sur 1 à 7 jours (gra
 - Découpage dans le temps uniquement : mise au point sur mai à octobre 2025 (validation), constat final sur novembre 2025 à aujourd'hui (test), sans jamais régler le modèle en regardant le test.
 - Le cours du Brent est publié avec une semaine de retard : le modèle n'utilise que le cours connu le jour de la prévision.
 - Les fourchettes viennent de modèles quantiles (10 % et 90 %) recalés par calibration conformale.
-- Règle d'honnêteté : un horizon où le modèle ne bat pas la baseline n'est pas utilisé, et l'appli ne donne pas de conseil si aucun des 3 prochains jours n'est fiable.
+- Deux règles d'honnêteté. La courbe de prévision n'affiche que les horizons où le modèle bat la baseline. Les conseils (attends, fais le plein, prix stable) sont jugés sur ce qu'ils font gagner : chaque type est rejoué sur le passé et n'est activé que s'il est assez souvent juste et rentable sur la validation, puis confirmé sur le test.
 
 Les scores détaillés sont sur la page « Modèle » du site.

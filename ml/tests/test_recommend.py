@@ -93,3 +93,50 @@ def test_evaluate_recommendations() -> None:
     assert res["avg_gain_cents"] == {"wait": 4.0, "fill_now": -1.0}
     assert res["accuracy_by_kind"] == {"wait": 1.0, "fill_now": 0.0, "stable": 1.0}
     assert res["accuracy"] == pytest.approx(2 / 3)
+
+
+def test_evaluate_with_disabled_kinds() -> None:
+    row_wait = {"pred1": -3, "low1": -5, "high1": -1, "y1": -4, "pred2": 0, "low2": -1, "high2": 1, "y2": -4,
+                "pred3": 0, "low3": -1, "high3": 1, "y3": -4}
+    res = evaluate.evaluate_recommendations(pd.DataFrame([row_wait]), ALL, enabled_kinds={"stable"})
+    # "Attends" désactivé : pas de conseil plutôt qu'un autre conseil
+    assert res["counts"] == {"wait": 0, "fill_now": 0, "stable": 0, "none": 1}
+    assert res["accuracy"] is None
+
+
+def stats(wait=(0, None, None), fill_now=(0, None, None), stable=(0, None)) -> dict:
+    """Résultat de evaluate_recommendations écrit à la main : (nombre, taux, gain)."""
+    return {
+        "counts": {"wait": wait[0], "fill_now": fill_now[0], "stable": stable[0], "none": 0},
+        "accuracy_by_kind": {"wait": wait[1], "fill_now": fill_now[1], "stable": stable[1]},
+        "avg_gain_cents": {"wait": wait[2], "fill_now": fill_now[2]},
+    }
+
+
+def test_select_kinds() -> None:
+    val = stats(wait=(108, 0.74, 4.5), fill_now=(40, 0.85, 3.9), stable=(199_852, 0.86))
+    test = stats(wait=(50, 0.66, 2.1), fill_now=(25, 0.40, 1.0), stable=(150_000, 0.70))
+    d = evaluate.select_kinds(val, test)
+    assert d["wait"] == {"validation": True, "test": True, "enabled": True}
+    # Bon sur la validation mais pas confirmé sur le test (40 % de bons conseils)
+    assert d["fill_now"] == {"validation": True, "test": False, "enabled": False}
+    assert d["stable"]["enabled"] is True
+
+
+@pytest.mark.parametrize(
+    "val_wait, reason",
+    [
+        ((20, 0.9, 5.0), "trop peu de cas pour juger"),
+        ((100, 0.55, 2.0), "pas assez souvent juste"),
+        ((100, 0.7, -0.5), "fait perdre de l'argent en moyenne"),
+    ],
+)
+def test_select_kinds_rejects(val_wait: tuple, reason: str) -> None:
+    test = stats(wait=(100, 0.9, 5.0))
+    assert evaluate.select_kinds(stats(wait=val_wait), test)["wait"]["enabled"] is False, reason
+
+
+def test_select_kinds_needs_enough_test_cases() -> None:
+    val = stats(wait=(100, 0.8, 3.0))
+    assert evaluate.select_kinds(val, stats(wait=(5, 1.0, 6.0)))["wait"]["enabled"] is False
+
