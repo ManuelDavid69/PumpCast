@@ -62,11 +62,21 @@ L'API GraphQL répond sur `http://localhost:8080/graphql` et une page pour teste
 }
 ```
 
+Lancer le front (Next.js, sur http://localhost:3000) :
+
+```bash
+cd web
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
 Tests (les tests d'intégration ont besoin du MongoDB et du Redis locaux, ils sont ignorés sinon) :
 
 ```bash
 MONGO_TEST_URI=mongodb://localhost:27017 REDIS_TEST_URL=redis://localhost:6379/15 go test ./...
 docker compose --profile ml run --rm --no-deps ml python -m pytest -q
+cd web && npm test
 ```
 
 ## Sources des données
@@ -90,4 +100,11 @@ Mesuré en local : de 2023 à novembre 2026, ça fait 5,7 millions de relevés, 
 - **Cache Redis** : prix actuels (mis à jour à chaque ingestion) et statistiques par département (une heure, vidé par l'ingestion).
 - **Rate limiting** : 120 requêtes par minute et par IP, compteur dans Redis. L'IP vient de la connexion, ou de la dernière entrée de `X-Forwarded-For` derrière le proxy de Render (les autres entrées peuvent être inventées par le client).
 - **Limite de complexité** : une requête GraphQL trop lourde est refusée avant d'être exécutée, et les paramètres sont bornés (rayon 50 km, 100 stations, 365 jours d'historique, 5 stations à comparer).
+
+## Quelques choix sur le front
+
+- **Rendu côté serveur** pour les fiches stations, la comparaison et les départements : la page arrive déjà remplie, rapide à afficher et lisible par Google. Les données sont gardées en cache quelques minutes (`'use cache'` de Next.js), les prix ne changent pas plus vite dans le flux officiel.
+- **Apollo Client** seulement pour la carte de l'accueil, qui dépend de la position de l'utilisateur et relance des requêtes quand on change de ville ou de carburant.
+- **Courbes en escalier** : un prix ne bouge pas entre deux changements, une courbe lissée inventerait des prix intermédiaires qui n'ont jamais existé.
+- **Recherche de ville** avec le service de géocodage officiel de l'IGN (Géoplateforme), gratuit et sans clé.
 

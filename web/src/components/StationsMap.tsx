@@ -57,11 +57,13 @@ function FitToStations({
   const map = useMap();
   const fitted = useRef<string | null>(null);
 
-  // La carte est créée avant que son conteneur ait sa taille finale :
-  // sans ça Leaflet ne charge les tuiles que sur une partie de la carte
+  // Leaflet ne voit pas quand son conteneur change de taille (chargement de la
+  // page, rotation du téléphone...) : sans ça il ne charge les tuiles que sur
+  // une partie de la carte. On le prévient à chaque changement.
   useEffect(() => {
-    const timer = setTimeout(() => map.invalidateSize(), 100);
-    return () => clearTimeout(timer);
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
   }, [map]);
 
   useEffect(() => {
@@ -72,6 +74,7 @@ function FitToStations({
       map.setView([center.lat, center.lng], 13);
       return;
     }
+    map.invalidateSize();
     const bounds = L.latLngBounds(stations.map((s) => [s.latitude as number, s.longitude as number]));
     map.fitBounds(bounds.extend([center.lat, center.lng]), { padding: [30, 30], maxZoom: 15 });
     fitted.current = placeKey;

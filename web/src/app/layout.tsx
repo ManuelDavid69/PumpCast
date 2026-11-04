@@ -29,13 +29,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="fr" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <header className="border-b border-line bg-paper">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3">
             <Link href="/" className="font-board text-2xl font-bold tracking-tight">
               PumpCast
             </Link>
-            <nav className="flex gap-1 text-[15px] font-medium">
+            <nav className="flex gap-0.5 text-sm font-medium sm:gap-1 sm:text-[15px]">
               {NAV.map((item) => (
-                <Link key={item.href} href={item.href} className="rounded px-3 py-1.5 text-muted hover:bg-line/50 hover:text-ink">
+                <Link key={item.href} href={item.href} className="rounded px-2 py-1.5 text-muted hover:bg-line/50 hover:text-ink sm:px-3">
                   {item.label}
                 </Link>
               ))}

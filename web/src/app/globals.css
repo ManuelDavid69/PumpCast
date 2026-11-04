@@ -91,3 +91,8 @@ body {
   background: none !important;
   border: none !important;
 }
+
+/* Fond de la carte de chaleur : la couleur de la page plutôt que le gris de Leaflet */
+.departments-map.leaflet-container {
+  background: var(--color-paper);
+}
