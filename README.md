@@ -42,16 +42,30 @@ Ouvrir le notebook d'exploration (Jupyter Lab sur http://localhost:8888, le lien
 docker compose --profile ml up notebook
 ```
 
-Lancer l'API (route `/health` pour l'instant) :
+Lancer l'API :
 
 ```bash
 go run ./cmd/server
 ```
 
-Tests (le test sur la time series a besoin du MongoDB local, il est ignoré sinon) :
+L'API GraphQL répond sur `http://localhost:8080/graphql` et une page pour tester les requêtes est sur `http://localhost:8080/playground`. Exemple, les 5 stations les moins chères en gazole autour de Villeurbanne avec leur historique :
+
+```graphql
+{
+  stationsNear(lat: 45.7712, lng: 4.8835, radiusKm: 5, fuel: GAZOLE, sort: PRICE, limit: 5) {
+    address
+    city
+    distanceKm
+    currentPrices { fuel price outOfStock }
+    priceHistory(fuel: GAZOLE, days: 30) { date price }
+  }
+}
+```
+
+Tests (les tests d'intégration ont besoin du MongoDB et du Redis locaux, ils sont ignorés sinon) :
 
 ```bash
-MONGO_TEST_URI=mongodb://localhost:27017 go test ./...
+MONGO_TEST_URI=mongodb://localhost:27017 REDIS_TEST_URL=redis://localhost:6379/15 go test ./...
 docker compose --profile ml run --rm --no-deps ml python -m pytest -q
 ```
 
@@ -68,3 +82,12 @@ docker compose --profile ml run --rm --no-deps ml python -m pytest -q
 L'hébergement gratuit de MongoDB (Atlas M0) est limité à 512 Mo. Les prix actuels sont gardés pour toute la France (dans Redis), mais l'historique jour par jour ne l'est que pour les départements de `HISTORY_DEPARTMENTS` (AURA par défaut, environ 2 000 stations).
 
 Mesuré en local : de 2023 à novembre 2026, ça fait 5,7 millions de relevés, 87 Mo de données et 48 Mo réellement sur le disque grâce à la compression des collections time series. On a donc de la marge pour ajouter des années ou des départements plus tard.
+
+## Quelques choix sur l'API
+
+- **GraphQL** parce que chaque page a besoin de données très différentes (prix actuels sur l'accueil, historique et prédiction sur la fiche station, plusieurs courbes pour la comparaison). Le client demande juste les champs qu'il affiche, en une requête.
+- **Dataloaders** pour éviter le problème N+1 : pour 20 stations avec leur historique, on fait une requête MongoDB avec les 20 identifiants au lieu de 20 requêtes. Un test compte les requêtes envoyées à MongoDB pour le vérifier.
+- **Cache Redis** : prix actuels (mis à jour à chaque ingestion) et statistiques par département (une heure, vidé par l'ingestion).
+- **Rate limiting** : 120 requêtes par minute et par IP, compteur dans Redis. L'IP vient de la connexion, ou de la dernière entrée de `X-Forwarded-For` derrière le proxy de Render (les autres entrées peuvent être inventées par le client).
+- **Limite de complexité** : une requête GraphQL trop lourde est refusée avant d'être exécutée, et les paramètres sont bornés (rayon 50 km, 100 stations, 365 jours d'historique, 5 stations à comparer).
+

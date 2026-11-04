@@ -23,6 +23,7 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/health"
 	"github.com/ManuelDavid69/pumpcast/api/internal/predictions"
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
+	"github.com/ManuelDavid69/pumpcast/api/internal/ratelimit"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
 )
@@ -69,7 +70,9 @@ func run() error {
 	}()
 
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID, middleware.RealIP, middleware.Logger, middleware.Recoverer)
+	// Pas de middleware.RealIP : il croit l'en-tête X-Forwarded-For envoyé par
+	// le client, ce qui permettrait de contourner le rate limiting
+	r.Use(middleware.RequestID, middleware.Logger, middleware.Recoverer)
 	r.Get("/health", health.Handler(map[string]health.Check{
 		"mongo": func(ctx context.Context) error { return mongoClient.Ping(ctx, readpref.Primary()) },
 		"redis": func(ctx context.Context) error { return redisClient.Ping(ctx).Err() },
@@ -85,7 +88,8 @@ func run() error {
 		Redis:       redisClient,
 		Now:         time.Now,
 	}
-	r.Handle("/graphql", graph.NewHandler(resolver, dataloader.Sources{
+	limiter := ratelimit.New(redisClient, cfg.RateLimitPerMinute)
+	r.With(limiter.Middleware(cfg.TrustProxy)).Handle("/graphql", graph.NewHandler(resolver, dataloader.Sources{
 		Current:     current,
 		History:     prices.NewHistoryRepository(database),
 		Predictions: preds,

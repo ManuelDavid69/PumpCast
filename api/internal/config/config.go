@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -16,6 +17,10 @@ type Config struct {
 	FeedURL  string
 	// Active la page /playground pour tester l'API à la main
 	EnablePlayground bool
+	// Nombre de requêtes GraphQL autorisées par IP et par minute
+	RateLimitPerMinute int
+	// L'API est derrière un proxy (Render) qui ajoute X-Forwarded-For
+	TrustProxy bool
 	// Départements dont on garde l'historique des prix.
 	// nil veut dire toute la France.
 	HistoryDepartments []string
@@ -33,6 +38,13 @@ func Load() (Config, error) {
 	}
 
 	cfg.EnablePlayground = getEnv("ENABLE_PLAYGROUND", "true") == "true"
+	cfg.TrustProxy = getEnv("TRUST_PROXY", "false") == "true"
+
+	limit, err := strconv.Atoi(getEnv("RATE_LIMIT_PER_MINUTE", "120"))
+	if err != nil || limit < 1 {
+		return Config{}, fmt.Errorf("RATE_LIMIT_PER_MINUTE invalide : %q", getEnv("RATE_LIMIT_PER_MINUTE", ""))
+	}
+	cfg.RateLimitPerMinute = limit
 
 	deps, err := parseDepartments(getEnv("HISTORY_DEPARTMENTS", "all"))
 	if err != nil {
