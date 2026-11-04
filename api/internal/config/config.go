@@ -21,6 +21,8 @@ type Config struct {
 	RateLimitPerMinute int
 	// L'API est derrière un proxy (Render) qui ajoute X-Forwarded-For
 	TrustProxy bool
+	// Origines autorisées à appeler l'API depuis un navigateur (le front)
+	CORSOrigins []string
 	// Départements dont on garde l'historique des prix.
 	// nil veut dire toute la France.
 	HistoryDepartments []string
@@ -39,6 +41,11 @@ func Load() (Config, error) {
 
 	cfg.EnablePlayground = getEnv("ENABLE_PLAYGROUND", "true") == "true"
 	cfg.TrustProxy = getEnv("TRUST_PROXY", "false") == "true"
+	for _, o := range strings.Split(getEnv("CORS_ORIGINS", "http://localhost:3000"), ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			cfg.CORSOrigins = append(cfg.CORSOrigins, o)
+		}
+	}
 
 	limit, err := strconv.Atoi(getEnv("RATE_LIMIT_PER_MINUTE", "120"))
 	if err != nil || limit < 1 {

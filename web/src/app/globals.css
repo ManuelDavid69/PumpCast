@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/*
+ * Couleurs reprises de la signalisation routière française :
+ * bleu des panneaux d'autoroute, vert des routes, ambre des pompes.
+ * Le bleu et le vert ont un sens (autoroute / route), ils ne servent
+ * pas de décoration.
+ */
+@theme {
+  --color-paper: #f7f8f6;
+  --color-ink: #1b2430;
+  --color-muted: #5c6773;
+  --color-line: #d9dee3;
+  --color-autoroute: #1d4f91;
+  --color-route: #1e7b4a;
+  --color-signal: #e8a317;
+  --color-signal-ink: #7a5200;
+
+  --font-sans: var(--font-barlow), system-ui, sans-serif;
+  /* Chiffres des prix, étroits comme sur les totems des stations */
+  --font-board: var(--font-barlow-condensed), var(--font-barlow), sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus clavier toujours visible */
+:focus-visible {
+  outline: 2px solid var(--color-autoroute);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Étiquettes de prix sur la carte (L.divIcon) */
+.price-tag {
+  font-family: var(--font-board);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 6px 3px;
+  border-radius: 3px;
+  background: var(--color-ink);
+  color: #fff;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(27, 36, 48, 0.35);
+  transform: translate(-50%, -100%);
+  display: inline-block;
+}
+.price-tag::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: inherit;
+}
+.price-tag[data-road="A"] {
+  background: var(--color-autoroute);
+}
+.price-tag[data-cheapest="true"] {
+  background: var(--color-route);
+}
+.price-tag[data-active="true"] {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 1px;
+}
+.price-tag small {
+  font-size: 10px;
+  vertical-align: top;
+  margin-left: 1px;
+}
+.price-tag-wrap {
+  background: none !important;
+  border: none !important;
+}

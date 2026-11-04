@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 
 	"github.com/ManuelDavid69/pumpcast/api/graph"
@@ -73,6 +74,14 @@ func run() error {
 	// Pas de middleware.RealIP : il croit l'en-tête X-Forwarded-For envoyé par
 	// le client, ce qui permettrait de contourner le rate limiting
 	r.Use(middleware.RequestID, middleware.Logger, middleware.Recoverer)
+	// Le front tourne sur une autre origine (localhost:3000, Vercel) : sans
+	// CORS le navigateur bloquerait les réponses de l'API
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: cfg.CORSOrigins,
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+		MaxAge:         600,
+	}))
 	r.Get("/health", health.Handler(map[string]health.Check{
 		"mongo": func(ctx context.Context) error { return mongoClient.Ping(ctx, readpref.Primary()) },
 		"redis": func(ctx context.Context) error { return redisClient.Ping(ctx).Err() },

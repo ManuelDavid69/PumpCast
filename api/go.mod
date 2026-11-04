@@ -5,6 +5,7 @@ go 1.27.3
 require (
 	github.com/99designs/gqlgen v0.17.98
 	github.com/go-chi/chi/v5 v5.5.0
+	github.com/go-chi/cors v1.2.2
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/vektah/gqlparser/v2 v2.5.64
 	github.com/vikstrous/dataloadgen v0.0.10
