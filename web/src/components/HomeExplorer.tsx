@@ -171,7 +171,9 @@ export function HomeExplorer() {
         <section aria-label="Stations" className="lg:h-[70vh] lg:overflow-y-auto">
           {error && (
             <p className="rounded border border-line bg-white p-4 text-[15px]">
-              L&apos;API ne répond pas : {error.message}. Vérifie qu&apos;elle tourne sur le port 8080.
+              Le serveur ne répond pas. Il est hébergé gratuitement et s&apos;endort après
+              15 minutes sans visite : recharge la page dans une minute, le temps qu&apos;il
+              se réveille.
             </p>
           )}
           {!error && !loading && stations.length === 0 && (
