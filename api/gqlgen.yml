@@ -1,0 +1,49 @@
+# Configuration de gqlgen : on écrit le schéma, gqlgen génère le code Go.
+# Pour régénérer après une modification du schéma : go tool gqlgen generate
+schema:
+  - graph/*.graphqls
+
+# Code d'exécution généré (ne pas modifier à la main)
+exec:
+  package: generated
+  layout: single-file
+  filename: graph/generated/generated.go
+
+# Types générés à partir du schéma
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+# Resolvers : un fichier par fichier de schéma, complétés à la main
+resolver:
+  package: graph
+  layout: follow-schema
+  dir: graph
+  filename_template: "{name}.resolvers.go"
+
+# Les types déjà écrits dans graph/model sont réutilisés au lieu d'être générés
+autobind:
+  - github.com/ManuelDavid69/pumpcast/api/graph/model
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+  # Champs résolus à la demande : gqlgen crée une fonction resolver pour chacun
+  Station:
+    fields:
+      currentPrices:
+        resolver: true
+      priceHistory:
+        resolver: true
+      prediction:
+        resolver: true
+  DepartmentStats:
+    fields:
+      cheapestStation:
+        resolver: true
+      trend30d:
+        resolver: true

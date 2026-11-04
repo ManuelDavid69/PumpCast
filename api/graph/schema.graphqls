@@ -1,0 +1,149 @@
+# Schéma GraphQL de PumpCast.
+#
+# Chaque page du front demande exactement les champs dont elle a besoin :
+# l'accueil veut les prix actuels de quelques stations proches, la fiche
+# station veut l'historique et la prédiction, la comparaison veut plusieurs
+# courbes. Les champs lourds (priceHistory, prediction) ne sont calculés
+# que s'ils sont demandés.
+#
+# Les comptes, favoris et alertes (me, register, login...) arrivent en phase 6.
+
+enum Fuel {
+  GAZOLE
+  SP95
+  SP98
+  E10
+  E85
+  GPLC
+}
+
+enum Recommendation {
+  FILL_NOW
+  WAIT
+  STABLE
+}
+
+enum StationSort {
+  DISTANCE
+  # Nécessite le paramètre fuel
+  PRICE
+}
+
+type Station {
+  id: ID!
+  address: String!
+  city: String!
+  postalCode: String!
+  department: String!
+  # Nulles pour quelques anciennes stations des archives, sans coordonnées
+  latitude: Float
+  longitude: Float
+  # "R" route, "A" autoroute
+  roadType: String!
+  services: [String!]!
+  openingHours: OpeningHours!
+  # Vide si la station n'est plus dans le flux du jour (station fermée)
+  currentPrices: [CurrentPrice!]!
+  # Un point par jour, du plus ancien au plus récent. 365 jours maximum.
+  priceHistory(fuel: Fuel!, days: Int = 30): [PricePoint!]!
+  prediction(fuel: Fuel!): Prediction
+  # Renseigné seulement par stationsNear
+  distanceKm: Float
+}
+
+type OpeningHours {
+  automate24h: Boolean!
+  days: [OpeningDay!]!
+}
+
+type OpeningDay {
+  # 1 = lundi
+  day: Int!
+  name: String!
+  closed: Boolean!
+  slots: [TimeSlot!]!
+}
+
+type TimeSlot {
+  open: String!
+  close: String!
+}
+
+type CurrentPrice {
+  fuel: Fuel!
+  # Nuls quand la station signale une rupture sans prix connu
+  price: Float
+  updatedAt: String
+  outOfStock: Boolean!
+}
+
+type PricePoint {
+  # Date au format AAAA-MM-JJ
+  date: String!
+  price: Float!
+}
+
+type PredictedPoint {
+  date: String!
+  price: Float!
+  low: Float!
+  high: Float!
+}
+
+type Prediction {
+  horizon: [PredictedPoint!]!
+  recommendation: Recommendation!
+  confidence: Float!
+  reasons: [String!]!
+  modelVersion: String!
+  generatedAt: String!
+}
+
+type DepartmentStats {
+  department: String!
+  fuel: Fuel!
+  # Date des chiffres du jour (le dernier jour connu)
+  date: String!
+  avgPrice: Float!
+  minPrice: Float!
+  maxPrice: Float!
+  stationCount: Int!
+  cheapestStation: Station
+  # Moyenne du département jour par jour sur les 30 derniers jours
+  trend30d: [PricePoint!]!
+}
+
+type DepartmentAverage {
+  department: String!
+  avgPrice: Float!
+  stationCount: Int!
+}
+
+type ModelPerformance {
+  modelVersion: String!
+  trainedAt: String!
+  horizonDays: Int!
+  maeModel: Float!
+  maeBaseline: Float!
+  recommendationAccuracy: Float
+}
+
+type Query {
+  # Stations encore actives autour d'un point. radiusKm 50 max, limit 100 max.
+  stationsNear(
+    lat: Float!
+    lng: Float!
+    radiusKm: Float = 10
+    fuel: Fuel
+    sort: StationSort = DISTANCE
+    limit: Int = 20
+  ): [Station!]!
+  station(id: ID!): Station
+  # 5 stations maximum. Le carburant et la période se choisissent sur
+  # priceHistory, c'est le client qui décide ce qu'il veut comparer.
+  compareStations(ids: [ID!]!): [Station!]!
+  departmentStats(department: String!, fuel: Fuel!): DepartmentStats
+  # Moyenne du dernier jour pour chaque département, pour la carte de chaleur
+  departmentAverages(fuel: Fuel!): [DepartmentAverage!]!
+  modelPerformance: [ModelPerformance!]!
+}
