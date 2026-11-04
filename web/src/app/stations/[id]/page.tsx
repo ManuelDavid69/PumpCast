@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PriceChart } from "@/components/PriceChart";
 import { PredictionPanel } from "@/components/PredictionPanel";
+import { StationActions } from "@/components/StationActions";
 import { Price } from "@/components/Price";
 import { UpdatedAt } from "@/components/UpdatedAt";
 import { getDepartmentStats, getStation, getStationHistory } from "@/lib/api";
@@ -199,6 +200,21 @@ async function StationView({ params, searchParams }: PageProps<"/stations/[id]">
                   {FUEL_LABELS[fuel]} mis à jour <UpdatedAt iso={current.updatedAt} />
                 </p>
               )}
+            </section>
+          )}
+
+          {!closed && (
+            <section aria-labelledby="follow-title">
+              <h2 id="follow-title" className="mb-2 font-semibold">
+                Suivre cette station
+              </h2>
+              <StationActions
+                stationId={station.id}
+                fuels={available}
+                defaultFuel={fuel}
+                currentPrice={current?.price ?? null}
+                hasForecast={prediction !== null}
+              />
             </section>
           )}
 

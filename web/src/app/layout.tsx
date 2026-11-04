@@ -24,6 +24,7 @@ const NAV = [
   { href: "/departements", label: "Départements" },
   { href: "/modele", label: "Modèle" },
   { href: "/a-propos", label: "À propos" },
+  { href: "/compte", label: "Mon compte" },
 ];
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

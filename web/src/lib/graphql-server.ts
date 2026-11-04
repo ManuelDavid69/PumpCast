@@ -15,7 +15,12 @@ type GraphQLResponse<T> = {
 export async function gqlFetch<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const res = await fetch(SERVER_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // Pages rendues par le serveur Next : la clé interne évite qu'elles soient
+      // toutes comptées sur la même IP par le rate limiting de l'API
+      ...(process.env.INTERNAL_API_KEY ? { "X-Internal-Key": process.env.INTERNAL_API_KEY } : {}),
+    },
     body: JSON.stringify({ query, variables }),
   });
   const body = (await res.json()) as GraphQLResponse<T>;
