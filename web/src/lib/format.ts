@@ -36,6 +36,11 @@ export function formatCents(delta: number): string {
   return `${sign}${Math.abs(cents).toFixed(1).replace(".", ",")} c`;
 }
 
+/** Écart en centimes sans signe, quand la phrase dit déjà "moins cher" ou "plus cher". */
+export function formatCentsAbs(delta: number): string {
+  return `${Math.abs(delta * 100).toFixed(1).replace(".", ",")} c`;
+}
+
 /** "850 m" sous un kilomètre, "2,4 km" au delà. */
 export function formatDistance(km: number): string {
   if (km < 1) {
