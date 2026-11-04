@@ -15,12 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     # Les tests d'intégration ont besoin d'un vrai MongoDB et d'un vrai Redis
     services:
+      # Les health checks font attendre GitHub que les bases répondent
+      # avant de lancer les étapes
       mongo:
         image: mongo:8.0
         ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1}).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
       redis:
         image: redis:7.4-alpine
         ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     defaults:
       run:
         working-directory: api
@@ -47,10 +55,17 @@ jobs:
             exit 1
           fi
         env:
-          MONGO_TEST_URI: mongodb://localhost:27017
-          REDIS_TEST_URL: redis://localhost:6379/15
+          # 127.0.0.1 plutôt que localhost : sur les runners, localhost
+          # répond d'abord en IPv6 alors que les conteneurs écoutent en IPv4
+          MONGO_TEST_URI: mongodb://127.0.0.1:27017
+          REDIS_TEST_URL: redis://127.0.0.1:6379/15
       - name: Image Docker
         run: docker build -t pumpcast-api .
+      - name: État des conteneurs en cas d'échec
+        if: failure()
+        run: |
+          docker ps -a --format '{{.Image}} {{.Status}}' | while read -r line; do echo "::warning::$line"; done
+          for c in $(docker ps -aq); do docker logs --tail 5 "$c" 2>&1 | while read -r line; do echo "::warning::$line"; done; done
 
   ml:
     name: Machine learning Python

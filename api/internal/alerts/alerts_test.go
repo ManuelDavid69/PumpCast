@@ -157,7 +157,7 @@ func TestCheckerRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Base Redis 12 : chaque package de tests a la sienne (ils tournent en parallèle)
-	rdb, err := cache.Connect(ctx, "redis://localhost:6379/12")
+	rdb, err := cache.Connect(ctx, "redis://127.0.0.1:6379/12")
 	if err != nil {
 		t.Fatal(err)
 	}
