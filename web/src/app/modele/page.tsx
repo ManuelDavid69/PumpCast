@@ -3,6 +3,7 @@
 // annoncer mieux que ce que le test a montré.
 
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import type { ModelRun } from "@/graphql/queries";
 import { getModelRuns } from "@/lib/api";
@@ -73,6 +74,9 @@ export default function ModelPage() {
 }
 
 async function ModelView() {
+  // Rendue à la demande et pas au moment du build : sur Render l'API dort
+  // après 15 min sans visite, un build ne doit pas dépendre d'elle
+  await connection();
   const runs = await getModelRuns();
   const run = runs[0];
   if (!run) {

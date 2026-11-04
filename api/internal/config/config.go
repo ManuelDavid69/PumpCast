@@ -48,8 +48,9 @@ func Load() (Config, error) {
 		MongoURI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		MongoDB:  getEnv("MONGO_DB", "pumpcast"),
 		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
-		APIPort:  getEnv("API_PORT", "8080"),
-		FeedURL:  getEnv("FEED_URL", "https://donnees.roulez-eco.fr/opendata/instantane"),
+		// Render donne le port à utiliser dans PORT
+		APIPort: getEnv("API_PORT", getEnv("PORT", "8080")),
+		FeedURL: getEnv("FEED_URL", "https://donnees.roulez-eco.fr/opendata/instantane"),
 	}
 
 	cfg.EnablePlayground = getEnv("ENABLE_PLAYGROUND", "true") == "true"

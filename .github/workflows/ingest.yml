@@ -1,0 +1,45 @@
+# Récupère les prix du flux officiel toutes les heures, puis vérifie les
+# alertes de seuil ("le gazole passe sous 1,80 €").
+name: Ingestion des prix
+
+on:
+  schedule:
+    # Toutes les heures à la minute 7 (GitHub peut décaler de quelques minutes)
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Jamais deux ingestions en même temps
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: api
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_DB: pumpcast
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      HISTORY_DEPARTMENTS: "01,03,07,15,26,38,42,43,63,69,73,74"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: Ingestion du flux instantané
+        run: go run ./cmd/ingest
+      - name: Alertes de seuil
+        run: go run ./cmd/alerts
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          EMAIL_PROVIDER: brevo
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          ALERT_FROM_EMAIL: ${{ vars.ALERT_FROM_EMAIL }}

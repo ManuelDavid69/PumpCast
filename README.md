@@ -93,6 +93,10 @@ docker compose --profile ml run --rm --no-deps ml python -m pytest -q
 cd web && npm test
 ```
 
+## Déploiement
+
+En ligne, tout tourne sur des offres gratuites : Vercel pour le front, Render pour l'API, MongoDB Atlas, Upstash pour Redis, GitHub Actions pour les tâches planifiées (ingestion toutes les heures, prévisions chaque matin, entraînement le lundi) et Brevo pour les emails. Le pas à pas et la liste des variables à remplir sont dans [docs/deploiement.md](docs/deploiement.md).
+
 ## Sources des données
 
 - Prix des carburants en France, flux instantané et archives annuelles (prix-carburants.gouv.fr / data.economie.gouv.fr), Licence Ouverte 2.0
