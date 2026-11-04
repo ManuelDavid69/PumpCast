@@ -65,12 +65,16 @@ export function formatUpdatedAt(iso: string, now: Date = new Date()): string {
   return `le ${d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
 }
 
-/** Les villes du flux sont parfois en majuscules ("VILLEURBANNE"). */
-export function formatCity(city: string): string {
-  if (city !== city.toUpperCase()) {
-    return city;
+/**
+ * Les villes et adresses du flux sont parfois tout en majuscules
+ * ("VILLEURBANNE", "86 AVENUE JEAN MERMOZ") : on les remet en casse normale.
+ * Un texte déjà en minuscules est laissé tel quel.
+ */
+export function formatName(text: string): string {
+  if (text !== text.toUpperCase()) {
+    return text;
   }
-  return city
+  return text
     .toLowerCase()
     .replace(/(^|[\s'-])(\p{L})/gu, (_, sep: string, letter: string) => sep + letter.toUpperCase());
 }
