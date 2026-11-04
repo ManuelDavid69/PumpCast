@@ -1,0 +1,10 @@
+# Versions figées pour que l'entraînement soit reproductible
+pandas==3.1.0
+numpy==2.5.4
+scikit-learn==1.9.1
+pymongo==4.19.0
+joblib==1.6.0
+requests==2.34.2
+# zoneinfo a besoin de la base des fuseaux, absente de l'image python slim
+tzdata==2026.6
+pytest==9.2.0

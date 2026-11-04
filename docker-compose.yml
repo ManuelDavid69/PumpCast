@@ -1,5 +1,7 @@
 # Environnement de dev local : MongoDB + Redis.
 # L'API et le front seront ajoutés au fur et à mesure.
+# Le service ml se lance à la demande avec docker compose run (profil "ml"),
+# il ne démarre pas avec un simple docker compose up.
 services:
   mongo:
     image: mongo:8.0
@@ -28,6 +30,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  ml:
+    build: ./ml
+    image: pumpcast-ml
+    profiles: ["ml"]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: pumpcast
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      # Monte le code local pour itérer sans reconstruire l'image
+      - ./ml:/app
 
 volumes:
   mongo-data:

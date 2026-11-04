@@ -30,6 +30,12 @@ go run ./cmd/importhistory -from 2023 -to 2026
 
 Les archives ne donnent que les changements de prix. L'import reconstruit un prix par jour (le dernier prix connu), arrête de reporter un prix resté 30 jours sans mise à jour et saute les jours de rupture. 2022 n'est pas importée par défaut : la remise carburant de l'État d'avril à décembre crée des sauts de prix artificiels.
 
+Récupérer les données externes (Brent, EUR/USD, jours fériés, vacances scolaires) dans l'image Python du ML :
+
+```bash
+docker compose --profile ml run --rm ml
+```
+
 Lancer l'API (route `/health` pour l'instant) :
 
 ```bash
@@ -40,11 +46,16 @@ Tests (le test sur la time series a besoin du MongoDB local, il est ignoré sino
 
 ```bash
 MONGO_TEST_URI=mongodb://localhost:27017 go test ./...
+docker compose --profile ml run --rm --no-deps ml python -m pytest -q
 ```
 
 ## Sources des données
 
 - Prix des carburants en France, flux instantané et archives annuelles (prix-carburants.gouv.fr / data.economie.gouv.fr), Licence Ouverte 2.0
+- Prix du Brent : FRED, Federal Reserve Bank of St. Louis (série DCOILBRENTEU)
+- Taux de change EUR/USD : Banque centrale européenne
+- Jours fériés : calendrier.api.gouv.fr
+- Vacances scolaires : data.education.gouv.fr (calendrier scolaire)
 
 ## Pourquoi l'historique est limité à Auvergne-Rhône-Alpes
 
