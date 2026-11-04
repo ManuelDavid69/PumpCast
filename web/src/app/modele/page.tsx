@@ -45,8 +45,9 @@ const FEATURE_LABELS: Record<string, string> = {
   vacation_a_start_in7: "Départ en vacances dans la semaine",
 };
 
-const cents = (v: number, digits = 3) => `${v.toFixed(digits).replace(".", ",")} c`;
-const percent = (v: number) => `${Math.round(v * 100)} %`;
+// Espace insécable avant l'unité : "1,576 c" ne doit pas être coupé en fin de ligne
+const cents = (v: number, digits = 3) => `${v.toFixed(digits).replace(".", ",")} c`;
+const percent = (v: number) => `${Math.round(v * 100)} %`;
 
 export default function ModelPage() {
   return (
