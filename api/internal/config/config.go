@@ -14,6 +14,8 @@ type Config struct {
 	RedisURL string
 	APIPort  string
 	FeedURL  string
+	// Active la page /playground pour tester l'API à la main
+	EnablePlayground bool
 	// Départements dont on garde l'historique des prix.
 	// nil veut dire toute la France.
 	HistoryDepartments []string
@@ -29,6 +31,8 @@ func Load() (Config, error) {
 		APIPort:  getEnv("API_PORT", "8080"),
 		FeedURL:  getEnv("FEED_URL", "https://donnees.roulez-eco.fr/opendata/instantane"),
 	}
+
+	cfg.EnablePlayground = getEnv("ENABLE_PLAYGROUND", "true") == "true"
 
 	deps, err := parseDepartments(getEnv("HISTORY_DEPARTMENTS", "all"))
 	if err != nil {

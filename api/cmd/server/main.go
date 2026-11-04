@@ -10,14 +10,21 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 
+	"github.com/ManuelDavid69/pumpcast/api/graph"
 	"github.com/ManuelDavid69/pumpcast/api/internal/cache"
 	"github.com/ManuelDavid69/pumpcast/api/internal/config"
+	"github.com/ManuelDavid69/pumpcast/api/internal/dataloader"
 	"github.com/ManuelDavid69/pumpcast/api/internal/db"
 	"github.com/ManuelDavid69/pumpcast/api/internal/health"
+	"github.com/ManuelDavid69/pumpcast/api/internal/predictions"
+	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
+	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
+	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
 )
 
 func main() {
@@ -46,6 +53,11 @@ func run() error {
 		}
 	}()
 
+	database := mongoClient.Database(cfg.MongoDB)
+	if err := db.EnsureSchema(ctx, database); err != nil {
+		return err
+	}
+
 	redisClient, err := cache.Connect(ctx, cfg.RedisURL)
 	if err != nil {
 		return err
@@ -62,6 +74,26 @@ func run() error {
 		"mongo": func(ctx context.Context) error { return mongoClient.Ping(ctx, readpref.Primary()) },
 		"redis": func(ctx context.Context) error { return redisClient.Ping(ctx).Err() },
 	}))
+
+	current := prices.NewCurrentCache(redisClient)
+	preds := predictions.NewRepository(database)
+	resolver := &graph.Resolver{
+		Stations:    stations.NewRepository(database),
+		Current:     current,
+		Stats:       stats.NewRepository(database),
+		Predictions: preds,
+		Redis:       redisClient,
+		Now:         time.Now,
+	}
+	r.Handle("/graphql", graph.NewHandler(resolver, dataloader.Sources{
+		Current:     current,
+		History:     prices.NewHistoryRepository(database),
+		Predictions: preds,
+	}))
+	// Page web pour tester les requêtes à la main, désactivée en production
+	if cfg.EnablePlayground {
+		r.Handle("/playground", playground.Handler("PumpCast", "/graphql"))
+	}
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.APIPort,

@@ -3,6 +3,7 @@ package stats
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -124,4 +125,61 @@ func (r *Repository) ReplaceDays(ctx context.Context, start, end time.Time, list
 		return fmt.Errorf("insertion des moyennes : %w", err)
 	}
 	return nil
+}
+
+// Latest renvoie le dernier jour connu pour un département et un carburant.
+// nil si le département n'existe pas.
+func (r *Repository) Latest(ctx context.Context, department, fuel string) (*DepartmentDaily, error) {
+	var doc DepartmentDaily
+	err := r.coll.FindOne(ctx,
+		bson.D{{Key: "meta.department", Value: department}, {Key: "meta.fuel", Value: fuel}},
+		options.FindOne().SetSort(bson.D{{Key: "ts", Value: -1}}),
+	).Decode(&doc)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("moyenne du département : %w", err)
+	}
+	return &doc, nil
+}
+
+// Range renvoie les moyennes d'un département depuis from, triées par date.
+func (r *Repository) Range(ctx context.Context, department, fuel string, from time.Time) ([]DepartmentDaily, error) {
+	cur, err := r.coll.Find(ctx, bson.D{
+		{Key: "meta.department", Value: department},
+		{Key: "meta.fuel", Value: fuel},
+		{Key: "ts", Value: bson.D{{Key: "$gte", Value: from}}},
+	}, options.Find().SetSort(bson.D{{Key: "ts", Value: 1}}))
+	if err != nil {
+		return nil, fmt.Errorf("évolution du département : %w", err)
+	}
+	var list []DepartmentDaily
+	if err := cur.All(ctx, &list); err != nil {
+		return nil, fmt.Errorf("évolution du département : %w", err)
+	}
+	return list, nil
+}
+
+// LatestAll renvoie la moyenne de chaque département pour le dernier jour connu.
+func (r *Repository) LatestAll(ctx context.Context, fuel string) ([]DepartmentDaily, error) {
+	var last DepartmentDaily
+	err := r.coll.FindOne(ctx, bson.D{{Key: "meta.fuel", Value: fuel}},
+		options.FindOne().SetSort(bson.D{{Key: "ts", Value: -1}})).Decode(&last)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return []DepartmentDaily{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("moyennes des départements : %w", err)
+	}
+	cur, err := r.coll.Find(ctx, bson.D{{Key: "meta.fuel", Value: fuel}, {Key: "ts", Value: last.TS}},
+		options.Find().SetSort(bson.D{{Key: "meta.department", Value: 1}}))
+	if err != nil {
+		return nil, fmt.Errorf("moyennes des départements : %w", err)
+	}
+	var list []DepartmentDaily
+	if err := cur.All(ctx, &list); err != nil {
+		return nil, fmt.Errorf("moyennes des départements : %w", err)
+	}
+	return list, nil
 }

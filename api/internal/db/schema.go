@@ -57,6 +57,13 @@ func ensureIndexes(ctx context.Context, database *mongo.Database) error {
 			// Historique d'une station pour un carburant, trié par date
 			{Keys: bson.D{{Key: "meta.station_id", Value: 1}, {Key: "meta.fuel", Value: 1}, {Key: "ts", Value: 1}}},
 		},
+		"predictions": {
+			// Dernière prédiction d'une station pour un carburant
+			{Keys: bson.D{{Key: "station_id", Value: 1}, {Key: "fuel", Value: 1}, {Key: "generated_at", Value: -1}}},
+		},
+		"model_runs": {
+			{Keys: bson.D{{Key: "trained_at", Value: -1}}},
+		},
 		"department_daily": {
 			// Courbe d'un département pour un carburant
 			{Keys: bson.D{{Key: "meta.department", Value: 1}, {Key: "meta.fuel", Value: 1}, {Key: "ts", Value: 1}}},

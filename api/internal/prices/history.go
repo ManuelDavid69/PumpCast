@@ -149,3 +149,28 @@ func (r *HistoryRepository) InsertMany(ctx context.Context, list []DailyPrice) e
 	}
 	return nil
 }
+
+// ForStations renvoie l'historique d'un carburant depuis since pour plusieurs
+// stations en une seule requête (utilisé par le dataloader), trié par date.
+func (r *HistoryRepository) ForStations(ctx context.Context, ids []string, fuel string, since time.Time) (map[string][]DailyPrice, error) {
+	out := make(map[string][]DailyPrice, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	cur, err := r.coll.Find(ctx, bson.D{
+		{Key: "meta.station_id", Value: bson.D{{Key: "$in", Value: ids}}},
+		{Key: "meta.fuel", Value: fuel},
+		{Key: "ts", Value: bson.D{{Key: "$gte", Value: since}}},
+	}, options.Find().SetSort(bson.D{{Key: "ts", Value: 1}}))
+	if err != nil {
+		return nil, fmt.Errorf("lecture de l'historique : %w", err)
+	}
+	var docs []DailyPrice
+	if err := cur.All(ctx, &docs); err != nil {
+		return nil, fmt.Errorf("lecture de l'historique : %w", err)
+	}
+	for _, d := range docs {
+		out[d.Meta.StationID] = append(out[d.Meta.StationID], d)
+	}
+	return out, nil
+}

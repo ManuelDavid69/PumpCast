@@ -89,6 +89,11 @@ func run(file string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("%s (en %s)", sum, time.Since(start).Round(time.Millisecond))
+	// Les moyennes viennent d'être recalculées : on vide leur cache
+	n, err := cache.DeletePrefix(ctx, redisClient, cache.StatsPrefix)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s, %d clés de stats vidées du cache (en %s)", sum, n, time.Since(start).Round(time.Millisecond))
 	return nil
 }

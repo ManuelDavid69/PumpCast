@@ -77,3 +77,32 @@ func (c *CurrentCache) Get(ctx context.Context, stationID string) ([]Current, er
 	}
 	return list, nil
 }
+
+// GetMany lit les prix actuels de plusieurs stations en une seule commande
+// MGET. Une station absente du cache n'apparaît pas dans le résultat.
+func (c *CurrentCache) GetMany(ctx context.Context, ids []string) (map[string][]Current, error) {
+	out := make(map[string][]Current, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = CurrentKey(id)
+	}
+	values, err := c.rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, fmt.Errorf("lecture des prix actuels : %w", err)
+	}
+	for i, v := range values {
+		raw, ok := v.(string)
+		if !ok {
+			continue // nil : pas en cache
+		}
+		var list []Current
+		if err := json.Unmarshal([]byte(raw), &list); err != nil {
+			return nil, fmt.Errorf("prix en cache illisibles pour %s : %w", ids[i], err)
+		}
+		out[ids[i]] = list
+	}
+	return out, nil
+}
