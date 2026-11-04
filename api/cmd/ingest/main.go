@@ -21,6 +21,7 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/ingest"
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
+	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
 )
 
 func main() {
@@ -81,6 +82,7 @@ func run(file string) error {
 		Stations:    stations.NewRepository(database),
 		History:     prices.NewHistoryRepository(database),
 		Current:     prices.NewCurrentCache(redisClient),
+		Stats:       stats.NewRepository(database),
 		KeepHistory: cfg.KeepHistory,
 		Now:         time.Now,
 	})

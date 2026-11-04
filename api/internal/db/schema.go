@@ -12,17 +12,19 @@ import (
 // EnsureSchema crée les collections spéciales et les index s'ils n'existent pas.
 // On peut l'appeler à chaque démarrage : MongoDB ne fait rien si tout est déjà là.
 func EnsureSchema(ctx context.Context, database *mongo.Database) error {
-	if err := ensurePricesTimeSeries(ctx, database); err != nil {
-		return err
+	// Les deux collections ont un relevé par jour et par série
+	for _, name := range []string{"prices", "department_daily"} {
+		if err := ensureTimeSeries(ctx, database, name); err != nil {
+			return err
+		}
 	}
 	return ensureIndexes(ctx, database)
 }
 
-// La collection des prix doit être créée explicitement en time series :
-// si on insère directement, MongoDB crée une collection normale et on ne
-// peut plus la convertir après.
-func ensurePricesTimeSeries(ctx context.Context, database *mongo.Database) error {
-	names, err := database.ListCollectionNames(ctx, bson.D{{Key: "name", Value: "prices"}})
+// Une time series doit être créée explicitement : si on insère directement,
+// MongoDB crée une collection normale et on ne peut plus la convertir après.
+func ensureTimeSeries(ctx context.Context, database *mongo.Database, name string) error {
+	names, err := database.ListCollectionNames(ctx, bson.D{{Key: "name", Value: name}})
 	if err != nil {
 		return fmt.Errorf("liste des collections : %w", err)
 	}
@@ -38,8 +40,8 @@ func ensurePricesTimeSeries(ctx context.Context, database *mongo.Database) error
 			SetMetaField("meta").
 			SetGranularity("hours"),
 	)
-	if err := database.CreateCollection(ctx, "prices", opts); err != nil {
-		return fmt.Errorf("création de la collection prices : %w", err)
+	if err := database.CreateCollection(ctx, name, opts); err != nil {
+		return fmt.Errorf("création de la collection %s : %w", name, err)
 	}
 	return nil
 }
@@ -54,6 +56,10 @@ func ensureIndexes(ctx context.Context, database *mongo.Database) error {
 		"prices": {
 			// Historique d'une station pour un carburant, trié par date
 			{Keys: bson.D{{Key: "meta.station_id", Value: 1}, {Key: "meta.fuel", Value: 1}, {Key: "ts", Value: 1}}},
+		},
+		"department_daily": {
+			// Courbe d'un département pour un carburant
+			{Keys: bson.D{{Key: "meta.department", Value: 1}, {Key: "meta.fuel", Value: 1}, {Key: "ts", Value: 1}}},
 		},
 	}
 

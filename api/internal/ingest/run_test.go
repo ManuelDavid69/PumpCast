@@ -107,3 +107,38 @@ func TestBuildBatch(t *testing.T) {
 		t.Errorf("History = %v, attendu GAZOLE 1.629 et SP98 1.799", byFuel)
 	}
 }
+
+func TestBuildBatchDeptStats(t *testing.T) {
+	list, _ := parseAll(t)
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, Paris)
+	b := BuildBatch(list, now, func(d string) bool { return d == "69" })
+
+	if len(b.DeptStats) != 3 {
+		t.Fatalf("len(DeptStats) = %d, attendu 3", len(b.DeptStats))
+	}
+
+	// Les moyennes couvrent toute la France, pas seulement le département 69.
+	wantDay := time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)
+	type want struct {
+		dep, fuel string
+		avg       float64
+		count     int
+	}
+	wants := []want{
+		{dep: "69", fuel: "GAZOLE", avg: 1.629, count: 1},
+		{dep: "69", fuel: "SP98", avg: 1.799, count: 1},
+		{dep: "971", fuel: "GAZOLE", avg: 1.85, count: 1},
+	}
+	for i, w := range wants {
+		d := b.DeptStats[i]
+		if !d.TS.Equal(wantDay) {
+			t.Errorf("DeptStats[%d].TS = %v, attendu %v", i, d.TS, wantDay)
+		}
+		if d.Meta.Department != w.dep || d.Meta.Fuel != w.fuel {
+			t.Errorf("DeptStats[%d] = %q/%q, attendu %q/%q", i, d.Meta.Department, d.Meta.Fuel, w.dep, w.fuel)
+		}
+		if d.AvgPrice != w.avg || d.StationCount != w.count {
+			t.Errorf("DeptStats[%d] avg %v count %d, attendu avg %v count %d", i, d.AvgPrice, d.StationCount, w.avg, w.count)
+		}
+	}
+}

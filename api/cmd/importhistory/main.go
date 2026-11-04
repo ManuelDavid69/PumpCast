@@ -24,6 +24,7 @@ import (
 	"github.com/ManuelDavid69/pumpcast/api/internal/ingest"
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
+	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
 )
 
 func main() {
@@ -69,6 +70,7 @@ func run(from, to int, dir string, thisYear int) error {
 	im := &archive.Importer{
 		History:     prices.NewHistoryRepository(database),
 		Stations:    stations.NewRepository(database),
+		Stats:       stats.NewRepository(database),
 		KeepHistory: cfg.KeepHistory,
 	}
 	// Aujourd'hui est géré par l'ingestion du flux instantané

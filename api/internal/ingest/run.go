@@ -8,6 +8,7 @@ import (
 
 	"github.com/ManuelDavid69/pumpcast/api/internal/prices"
 	"github.com/ManuelDavid69/pumpcast/api/internal/stations"
+	"github.com/ManuelDavid69/pumpcast/api/internal/stats"
 )
 
 // Au delà de 30 jours sans mise à jour, un prix est sûrement abandonné
@@ -19,6 +20,7 @@ type Deps struct {
 	Stations    *stations.Repository
 	History     *prices.HistoryRepository
 	Current     *prices.CurrentCache
+	Stats       *stats.Repository
 	KeepHistory func(department string) bool
 	Now         func() time.Time
 }
@@ -30,13 +32,14 @@ type Summary struct {
 	StationsWrites int64
 	CurrentPrices  int
 	History        prices.SaveResult
+	DeptStats      int
 	Day            time.Time
 }
 
 func (s Summary) String() string {
-	return fmt.Sprintf("%d stations lues (%d ignorées), %d écritures stations, %d prix actuels en cache, historique du %s : %d ajoutés, %d modifiés, %d inchangés",
+	return fmt.Sprintf("%d stations lues (%d ignorées), %d écritures stations, %d prix actuels en cache, historique du %s : %d ajoutés, %d modifiés, %d inchangés, %d moyennes département",
 		s.Stations, s.Skipped, s.StationsWrites, s.CurrentPrices, s.Day.Format("2006-01-02"),
-		s.History.Inserted, s.History.Updated, s.History.Unchanged)
+		s.History.Inserted, s.History.Updated, s.History.Unchanged, s.DeptStats)
 }
 
 // Batch est le résultat de la transformation du flux, avant écriture.
@@ -45,6 +48,8 @@ type Batch struct {
 	Stations []stations.Station
 	Current  map[string][]prices.Current
 	History  []prices.DailyPrice
+	// Moyennes du jour par département, pour toute la France
+	DeptStats []stats.DepartmentDaily
 }
 
 // StationDoc convertit une station du flux en document MongoDB.
@@ -69,6 +74,8 @@ func StationDoc(st Station, updatedAt time.Time) stations.Station {
 // BuildBatch transforme les stations du flux en documents à écrire.
 func BuildBatch(list []Station, now time.Time, keepHistory func(string) bool) Batch {
 	b := Batch{Current: make(map[string][]prices.Current, len(list))}
+	day := prices.Day(now, Paris)
+	acc := stats.NewAccumulator()
 
 	for _, st := range list {
 		b.Stations = append(b.Stations, StationDoc(st, now))
@@ -100,7 +107,12 @@ func BuildBatch(list []Station, now time.Time, keepHistory func(string) bool) Ba
 			})
 			// Pendant une rupture le prix affiché n'est pas payable, on ne le met
 			// pas dans l'historique pour ne pas fausser le modèle
-			if keepHistory(st.Department) && !outOfStock[p.Fuel] {
+			if outOfStock[p.Fuel] {
+				continue
+			}
+			// Mêmes prix que l'historique, mais pour tous les départements
+			acc.Add(day, st.Department, p.Fuel, p.Value)
+			if keepHistory(st.Department) {
 				b.History = append(b.History, prices.DailyPrice{
 					Meta:  prices.Meta{StationID: st.ID, Fuel: p.Fuel},
 					Price: p.Value,
@@ -118,6 +130,7 @@ func BuildBatch(list []Station, now time.Time, keepHistory func(string) bool) Ba
 			b.Current[st.ID] = current
 		}
 	}
+	b.DeptStats = acc.Results(day)
 	return b
 }
 
@@ -142,6 +155,11 @@ func Run(ctx context.Context, xmlData []byte, d Deps) (Summary, error) {
 	if sum.History, err = d.History.SaveDay(ctx, sum.Day, b.History); err != nil {
 		return sum, err
 	}
+	if err := d.Stats.ReplaceDays(ctx, sum.Day, sum.Day, b.DeptStats); err != nil {
+		return sum, err
+	}
+	sum.DeptStats = len(b.DeptStats)
+
 	// Le cache est mis à jour en dernier : si mongo a planté on garde
 	// les anciens prix plutôt qu'un cache incohérent avec la base
 	if err := d.Current.SaveAll(ctx, b.Current); err != nil {
