@@ -247,24 +247,22 @@ func (r *queryResolver) DepartmentAverages(ctx context.Context, fuel model.Fuel)
 	return out, nil
 }
 
-// ModelPerformance is the resolver for the modelPerformance field.
-func (r *queryResolver) ModelPerformance(ctx context.Context) ([]*model.ModelPerformance, error) {
-	runs, err := r.Predictions.Runs(ctx, performanceRuns)
+// ModelRuns is the resolver for the modelRuns field.
+func (r *queryResolver) ModelRuns(ctx context.Context, limit *int) ([]*model.ModelRun, error) {
+	n := 10
+	if limit != nil {
+		n = *limit
+	}
+	if n < 1 || n > 50 {
+		return nil, errors.New("limit doit être entre 1 et 50")
+	}
+	runs, err := r.Predictions.Runs(ctx, n)
 	if err != nil {
 		return nil, err
 	}
-	out := []*model.ModelPerformance{}
-	for _, run := range runs {
-		for _, h := range run.Metrics.Horizons {
-			out = append(out, &model.ModelPerformance{
-				ModelVersion:           run.ModelVersion,
-				TrainedAt:              run.TrainedAt.Format("2006-01-02T15:04:05Z07:00"),
-				HorizonDays:            h.Horizon,
-				MaeModel:               h.MAEModel,
-				MaeBaseline:            h.MAEBaseline,
-				RecommendationAccuracy: h.RecommendationAccuracy,
-			})
-		}
+	out := make([]*model.ModelRun, len(runs))
+	for i, run := range runs {
+		out[i] = toModelRun(run)
 	}
 	return out, nil
 }

@@ -61,13 +61,32 @@ type ComplexityRoot struct {
 		Trend30d        func(childComplexity int) int
 	}
 
-	ModelPerformance struct {
-		HorizonDays            func(childComplexity int) int
-		MaeBaseline            func(childComplexity int) int
-		MaeModel               func(childComplexity int) int
-		ModelVersion           func(childComplexity int) int
-		RecommendationAccuracy func(childComplexity int) int
-		TrainedAt              func(childComplexity int) int
+	FeatureImportance struct {
+		Feature     func(childComplexity int) int
+		MaeIncrease func(childComplexity int) int
+	}
+
+	HorizonScore struct {
+		BeatsBaseline    func(childComplexity int) int
+		Horizon          func(childComplexity int) int
+		IntervalCoverage func(childComplexity int) int
+		MaeBaseline      func(childComplexity int) int
+		MaeModel         func(childComplexity int) int
+		MaeRidge         func(childComplexity int) int
+		Periods          func(childComplexity int) int
+	}
+
+	ModelRun struct {
+		AllowedHorizons   func(childComplexity int) int
+		FeatureImportance func(childComplexity int) int
+		Horizons          func(childComplexity int) int
+		ModelVersion      func(childComplexity int) int
+		Recommendations   func(childComplexity int) int
+		TestEnd           func(childComplexity int) int
+		TestStart         func(childComplexity int) int
+		TrainEnd          func(childComplexity int) int
+		TrainStart        func(childComplexity int) int
+		TrainedAt         func(childComplexity int) int
 	}
 
 	OpeningDay struct {
@@ -82,6 +101,12 @@ type ComplexityRoot struct {
 		Days        func(childComplexity int) int
 	}
 
+	PeriodScore struct {
+		MaeBaseline func(childComplexity int) int
+		MaeModel    func(childComplexity int) int
+		Name        func(childComplexity int) int
+	}
+
 	PredictedPoint struct {
 		Date  func(childComplexity int) int
 		High  func(childComplexity int) int
@@ -90,6 +115,8 @@ type ComplexityRoot struct {
 	}
 
 	Prediction struct {
+		BaseDate       func(childComplexity int) int
+		BasePrice      func(childComplexity int) int
 		Confidence     func(childComplexity int) int
 		GeneratedAt    func(childComplexity int) int
 		Horizon        func(childComplexity int) int
@@ -107,9 +134,22 @@ type ComplexityRoot struct {
 		CompareStations    func(childComplexity int, ids []string) int
 		DepartmentAverages func(childComplexity int, fuel model.Fuel) int
 		DepartmentStats    func(childComplexity int, department string, fuel model.Fuel) int
-		ModelPerformance   func(childComplexity int) int
+		ModelRuns          func(childComplexity int, limit *int) int
 		Station            func(childComplexity int, id string) int
 		StationsNear       func(childComplexity int, lat float64, lng float64, radiusKm *float64, fuel *model.Fuel, sort *model.StationSort, limit *int) int
+	}
+
+	RecommendationStats struct {
+		Accuracy         func(childComplexity int) int
+		FillNowAccuracy  func(childComplexity int) int
+		FillNowCount     func(childComplexity int) int
+		FillNowGainCents func(childComplexity int) int
+		NoneCount        func(childComplexity int) int
+		StableAccuracy   func(childComplexity int) int
+		StableCount      func(childComplexity int) int
+		WaitAccuracy     func(childComplexity int) int
+		WaitCount        func(childComplexity int) int
+		WaitGainCents    func(childComplexity int) int
 	}
 
 	Station struct {
@@ -149,7 +189,7 @@ type QueryResolver interface {
 	CompareStations(ctx context.Context, ids []string) ([]*model.Station, error)
 	DepartmentStats(ctx context.Context, department string, fuel model.Fuel) (*model.DepartmentStats, error)
 	DepartmentAverages(ctx context.Context, fuel model.Fuel) ([]*model.DepartmentAverage, error)
-	ModelPerformance(ctx context.Context) ([]*model.ModelPerformance, error)
+	ModelRuns(ctx context.Context, limit *int) ([]*model.ModelRun, error)
 }
 type StationResolver interface {
 	CurrentPrices(ctx context.Context, obj *model.Station) ([]*model.CurrentPrice, error)
@@ -274,42 +314,122 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.DepartmentStats.Trend30d(childComplexity), true
 
-	case "ModelPerformance.horizonDays":
-		if e.ComplexityRoot.ModelPerformance.HorizonDays == nil {
+	case "FeatureImportance.feature":
+		if e.ComplexityRoot.FeatureImportance.Feature == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.HorizonDays(childComplexity), true
-	case "ModelPerformance.maeBaseline":
-		if e.ComplexityRoot.ModelPerformance.MaeBaseline == nil {
+		return e.ComplexityRoot.FeatureImportance.Feature(childComplexity), true
+	case "FeatureImportance.maeIncrease":
+		if e.ComplexityRoot.FeatureImportance.MaeIncrease == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.MaeBaseline(childComplexity), true
-	case "ModelPerformance.maeModel":
-		if e.ComplexityRoot.ModelPerformance.MaeModel == nil {
+		return e.ComplexityRoot.FeatureImportance.MaeIncrease(childComplexity), true
+
+	case "HorizonScore.beatsBaseline":
+		if e.ComplexityRoot.HorizonScore.BeatsBaseline == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.MaeModel(childComplexity), true
-	case "ModelPerformance.modelVersion":
-		if e.ComplexityRoot.ModelPerformance.ModelVersion == nil {
+		return e.ComplexityRoot.HorizonScore.BeatsBaseline(childComplexity), true
+	case "HorizonScore.horizon":
+		if e.ComplexityRoot.HorizonScore.Horizon == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.ModelVersion(childComplexity), true
-	case "ModelPerformance.recommendationAccuracy":
-		if e.ComplexityRoot.ModelPerformance.RecommendationAccuracy == nil {
+		return e.ComplexityRoot.HorizonScore.Horizon(childComplexity), true
+	case "HorizonScore.intervalCoverage":
+		if e.ComplexityRoot.HorizonScore.IntervalCoverage == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.RecommendationAccuracy(childComplexity), true
-	case "ModelPerformance.trainedAt":
-		if e.ComplexityRoot.ModelPerformance.TrainedAt == nil {
+		return e.ComplexityRoot.HorizonScore.IntervalCoverage(childComplexity), true
+	case "HorizonScore.maeBaseline":
+		if e.ComplexityRoot.HorizonScore.MaeBaseline == nil {
 			break
 		}
 
-		return e.ComplexityRoot.ModelPerformance.TrainedAt(childComplexity), true
+		return e.ComplexityRoot.HorizonScore.MaeBaseline(childComplexity), true
+	case "HorizonScore.maeModel":
+		if e.ComplexityRoot.HorizonScore.MaeModel == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HorizonScore.MaeModel(childComplexity), true
+	case "HorizonScore.maeRidge":
+		if e.ComplexityRoot.HorizonScore.MaeRidge == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HorizonScore.MaeRidge(childComplexity), true
+	case "HorizonScore.periods":
+		if e.ComplexityRoot.HorizonScore.Periods == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HorizonScore.Periods(childComplexity), true
+
+	case "ModelRun.allowedHorizons":
+		if e.ComplexityRoot.ModelRun.AllowedHorizons == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.AllowedHorizons(childComplexity), true
+	case "ModelRun.featureImportance":
+		if e.ComplexityRoot.ModelRun.FeatureImportance == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.FeatureImportance(childComplexity), true
+	case "ModelRun.horizons":
+		if e.ComplexityRoot.ModelRun.Horizons == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.Horizons(childComplexity), true
+	case "ModelRun.modelVersion":
+		if e.ComplexityRoot.ModelRun.ModelVersion == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.ModelVersion(childComplexity), true
+	case "ModelRun.recommendations":
+		if e.ComplexityRoot.ModelRun.Recommendations == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.Recommendations(childComplexity), true
+	case "ModelRun.testEnd":
+		if e.ComplexityRoot.ModelRun.TestEnd == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.TestEnd(childComplexity), true
+	case "ModelRun.testStart":
+		if e.ComplexityRoot.ModelRun.TestStart == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.TestStart(childComplexity), true
+	case "ModelRun.trainEnd":
+		if e.ComplexityRoot.ModelRun.TrainEnd == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.TrainEnd(childComplexity), true
+	case "ModelRun.trainStart":
+		if e.ComplexityRoot.ModelRun.TrainStart == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.TrainStart(childComplexity), true
+	case "ModelRun.trainedAt":
+		if e.ComplexityRoot.ModelRun.TrainedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ModelRun.TrainedAt(childComplexity), true
 
 	case "OpeningDay.closed":
 		if e.ComplexityRoot.OpeningDay.Closed == nil {
@@ -349,6 +469,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.OpeningHours.Days(childComplexity), true
 
+	case "PeriodScore.maeBaseline":
+		if e.ComplexityRoot.PeriodScore.MaeBaseline == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PeriodScore.MaeBaseline(childComplexity), true
+	case "PeriodScore.maeModel":
+		if e.ComplexityRoot.PeriodScore.MaeModel == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PeriodScore.MaeModel(childComplexity), true
+	case "PeriodScore.name":
+		if e.ComplexityRoot.PeriodScore.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PeriodScore.Name(childComplexity), true
+
 	case "PredictedPoint.date":
 		if e.ComplexityRoot.PredictedPoint.Date == nil {
 			break
@@ -374,6 +513,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.PredictedPoint.Price(childComplexity), true
 
+	case "Prediction.baseDate":
+		if e.ComplexityRoot.Prediction.BaseDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Prediction.BaseDate(childComplexity), true
+	case "Prediction.basePrice":
+		if e.ComplexityRoot.Prediction.BasePrice == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Prediction.BasePrice(childComplexity), true
 	case "Prediction.confidence":
 		if e.ComplexityRoot.Prediction.Confidence == nil {
 			break
@@ -458,12 +609,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.DepartmentStats(childComplexity, args["department"].(string), args["fuel"].(model.Fuel)), true
 
-	case "Query.modelPerformance":
-		if e.ComplexityRoot.Query.ModelPerformance == nil {
+	case "Query.modelRuns":
+		if e.ComplexityRoot.Query.ModelRuns == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Query.ModelPerformance(childComplexity), true
+		args, err := ec.field_Query_modelRuns_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.ModelRuns(childComplexity, args["limit"].(*int)), true
 	case "Query.station":
 		if e.ComplexityRoot.Query.Station == nil {
 			break
@@ -486,6 +642,67 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.StationsNear(childComplexity, args["lat"].(float64), args["lng"].(float64), args["radiusKm"].(*float64), args["fuel"].(*model.Fuel), args["sort"].(*model.StationSort), args["limit"].(*int)), true
+
+	case "RecommendationStats.accuracy":
+		if e.ComplexityRoot.RecommendationStats.Accuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.Accuracy(childComplexity), true
+	case "RecommendationStats.fillNowAccuracy":
+		if e.ComplexityRoot.RecommendationStats.FillNowAccuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.FillNowAccuracy(childComplexity), true
+	case "RecommendationStats.fillNowCount":
+		if e.ComplexityRoot.RecommendationStats.FillNowCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.FillNowCount(childComplexity), true
+	case "RecommendationStats.fillNowGainCents":
+		if e.ComplexityRoot.RecommendationStats.FillNowGainCents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.FillNowGainCents(childComplexity), true
+	case "RecommendationStats.noneCount":
+		if e.ComplexityRoot.RecommendationStats.NoneCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.NoneCount(childComplexity), true
+	case "RecommendationStats.stableAccuracy":
+		if e.ComplexityRoot.RecommendationStats.StableAccuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.StableAccuracy(childComplexity), true
+	case "RecommendationStats.stableCount":
+		if e.ComplexityRoot.RecommendationStats.StableCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.StableCount(childComplexity), true
+	case "RecommendationStats.waitAccuracy":
+		if e.ComplexityRoot.RecommendationStats.WaitAccuracy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.WaitAccuracy(childComplexity), true
+	case "RecommendationStats.waitCount":
+		if e.ComplexityRoot.RecommendationStats.WaitCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.WaitCount(childComplexity), true
+	case "RecommendationStats.waitGainCents":
+		if e.ComplexityRoot.RecommendationStats.WaitGainCents == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RecommendationStats.WaitGainCents(childComplexity), true
 
 	case "Station.address":
 		if e.ComplexityRoot.Station.Address == nil {
@@ -757,8 +974,14 @@ type PredictedPoint {
 }
 
 type Prediction {
+  # Jour et prix de départ de la prévision (le dernier prix connu)
+  baseDate: String!
+  basePrice: Float!
+  # Seulement les horizons où le modèle bat la baseline "le prix ne bouge pas"
   horizon: [PredictedPoint!]!
-  recommendation: Recommendation!
+  # Nulle quand aucun horizon des 3 prochains jours n'est assez fiable :
+  # on préfère ne rien conseiller que conseiller au hasard
+  recommendation: Recommendation
   confidence: Float!
   reasons: [String!]!
   modelVersion: String!
@@ -785,13 +1008,58 @@ type DepartmentAverage {
   stationCount: Int!
 }
 
-type ModelPerformance {
+# Un entraînement du modèle et ses scores sur la période de test
+type ModelRun {
   modelVersion: String!
   trainedAt: String!
-  horizonDays: Int!
-  maeModel: Float!
+  trainStart: String!
+  trainEnd: String!
+  testStart: String!
+  testEnd: String!
+  # Horizons utilisés par l'appli (ceux qui battent la baseline)
+  allowedHorizons: [Int!]!
+  horizons: [HorizonScore!]!
+  recommendations: RecommendationStats!
+  featureImportance: [FeatureImportance!]!
+}
+
+# Erreurs moyennes (MAE) en centimes sur la période de test
+type HorizonScore {
+  horizon: Int!
   maeBaseline: Float!
-  recommendationAccuracy: Float
+  maeRidge: Float!
+  maeModel: Float!
+  # Part des cas où le vrai prix tombe dans la fourchette (visé : 80 %)
+  intervalCoverage: Float!
+  beatsBaseline: Boolean!
+  periods: [PeriodScore!]!
+}
+
+type PeriodScore {
+  name: String!
+  maeBaseline: Float!
+  maeModel: Float!
+}
+
+# Recommandations rejouées sur la période de test
+type RecommendationStats {
+  accuracy: Float
+  waitCount: Int!
+  fillNowCount: Int!
+  stableCount: Int!
+  noneCount: Int!
+  waitAccuracy: Float
+  fillNowAccuracy: Float
+  stableAccuracy: Float
+  # Gain moyen en centimes par litre en suivant le conseil
+  waitGainCents: Float
+  fillNowGainCents: Float
+}
+
+type FeatureImportance {
+  feature: String!
+  # Hausse de l'erreur (en centimes) quand on brouille cette variable
+  maeIncrease: Float!
 }
 
 type Query {
@@ -811,7 +1079,8 @@ type Query {
   departmentStats(department: String!, fuel: Fuel!): DepartmentStats
   # Moyenne du dernier jour pour chaque département, pour la carte de chaleur
   departmentAverages(fuel: Fuel!): [DepartmentAverage!]!
-  modelPerformance: [ModelPerformance!]!
+  # Entraînements du plus récent au plus ancien
+  modelRuns(limit: Int = 10): [ModelRun!]!
 }
 `, BuiltIn: false},
 }
@@ -871,22 +1140,60 @@ func (ec *executionContext) childFields_DepartmentStats(ctx context.Context, fie
 	return nil, fmt.Errorf("no field named %q was found under type DepartmentStats", field.Name)
 }
 
-func (ec *executionContext) childFields_ModelPerformance(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+func (ec *executionContext) childFields_FeatureImportance(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "feature":
+		return ec.fieldContext_FeatureImportance_feature(ctx, field)
+	case "maeIncrease":
+		return ec.fieldContext_FeatureImportance_maeIncrease(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type FeatureImportance", field.Name)
+}
+
+func (ec *executionContext) childFields_HorizonScore(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "horizon":
+		return ec.fieldContext_HorizonScore_horizon(ctx, field)
+	case "maeBaseline":
+		return ec.fieldContext_HorizonScore_maeBaseline(ctx, field)
+	case "maeRidge":
+		return ec.fieldContext_HorizonScore_maeRidge(ctx, field)
+	case "maeModel":
+		return ec.fieldContext_HorizonScore_maeModel(ctx, field)
+	case "intervalCoverage":
+		return ec.fieldContext_HorizonScore_intervalCoverage(ctx, field)
+	case "beatsBaseline":
+		return ec.fieldContext_HorizonScore_beatsBaseline(ctx, field)
+	case "periods":
+		return ec.fieldContext_HorizonScore_periods(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type HorizonScore", field.Name)
+}
+
+func (ec *executionContext) childFields_ModelRun(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "modelVersion":
-		return ec.fieldContext_ModelPerformance_modelVersion(ctx, field)
+		return ec.fieldContext_ModelRun_modelVersion(ctx, field)
 	case "trainedAt":
-		return ec.fieldContext_ModelPerformance_trainedAt(ctx, field)
-	case "horizonDays":
-		return ec.fieldContext_ModelPerformance_horizonDays(ctx, field)
-	case "maeModel":
-		return ec.fieldContext_ModelPerformance_maeModel(ctx, field)
-	case "maeBaseline":
-		return ec.fieldContext_ModelPerformance_maeBaseline(ctx, field)
-	case "recommendationAccuracy":
-		return ec.fieldContext_ModelPerformance_recommendationAccuracy(ctx, field)
+		return ec.fieldContext_ModelRun_trainedAt(ctx, field)
+	case "trainStart":
+		return ec.fieldContext_ModelRun_trainStart(ctx, field)
+	case "trainEnd":
+		return ec.fieldContext_ModelRun_trainEnd(ctx, field)
+	case "testStart":
+		return ec.fieldContext_ModelRun_testStart(ctx, field)
+	case "testEnd":
+		return ec.fieldContext_ModelRun_testEnd(ctx, field)
+	case "allowedHorizons":
+		return ec.fieldContext_ModelRun_allowedHorizons(ctx, field)
+	case "horizons":
+		return ec.fieldContext_ModelRun_horizons(ctx, field)
+	case "recommendations":
+		return ec.fieldContext_ModelRun_recommendations(ctx, field)
+	case "featureImportance":
+		return ec.fieldContext_ModelRun_featureImportance(ctx, field)
 	}
-	return nil, fmt.Errorf("no field named %q was found under type ModelPerformance", field.Name)
+	return nil, fmt.Errorf("no field named %q was found under type ModelRun", field.Name)
 }
 
 func (ec *executionContext) childFields_OpeningDay(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -913,6 +1220,18 @@ func (ec *executionContext) childFields_OpeningHours(ctx context.Context, field 
 	return nil, fmt.Errorf("no field named %q was found under type OpeningHours", field.Name)
 }
 
+func (ec *executionContext) childFields_PeriodScore(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "name":
+		return ec.fieldContext_PeriodScore_name(ctx, field)
+	case "maeBaseline":
+		return ec.fieldContext_PeriodScore_maeBaseline(ctx, field)
+	case "maeModel":
+		return ec.fieldContext_PeriodScore_maeModel(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PeriodScore", field.Name)
+}
+
 func (ec *executionContext) childFields_PredictedPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "date":
@@ -929,6 +1248,10 @@ func (ec *executionContext) childFields_PredictedPoint(ctx context.Context, fiel
 
 func (ec *executionContext) childFields_Prediction(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
+	case "baseDate":
+		return ec.fieldContext_Prediction_baseDate(ctx, field)
+	case "basePrice":
+		return ec.fieldContext_Prediction_basePrice(ctx, field)
 	case "horizon":
 		return ec.fieldContext_Prediction_horizon(ctx, field)
 	case "recommendation":
@@ -953,6 +1276,32 @@ func (ec *executionContext) childFields_PricePoint(ctx context.Context, field gr
 		return ec.fieldContext_PricePoint_price(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type PricePoint", field.Name)
+}
+
+func (ec *executionContext) childFields_RecommendationStats(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "accuracy":
+		return ec.fieldContext_RecommendationStats_accuracy(ctx, field)
+	case "waitCount":
+		return ec.fieldContext_RecommendationStats_waitCount(ctx, field)
+	case "fillNowCount":
+		return ec.fieldContext_RecommendationStats_fillNowCount(ctx, field)
+	case "stableCount":
+		return ec.fieldContext_RecommendationStats_stableCount(ctx, field)
+	case "noneCount":
+		return ec.fieldContext_RecommendationStats_noneCount(ctx, field)
+	case "waitAccuracy":
+		return ec.fieldContext_RecommendationStats_waitAccuracy(ctx, field)
+	case "fillNowAccuracy":
+		return ec.fieldContext_RecommendationStats_fillNowAccuracy(ctx, field)
+	case "stableAccuracy":
+		return ec.fieldContext_RecommendationStats_stableAccuracy(ctx, field)
+	case "waitGainCents":
+		return ec.fieldContext_RecommendationStats_waitGainCents(ctx, field)
+	case "fillNowGainCents":
+		return ec.fieldContext_RecommendationStats_fillNowGainCents(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RecommendationStats", field.Name)
 }
 
 func (ec *executionContext) childFields_Station(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1176,6 +1525,20 @@ func (ec *executionContext) field_Query_departmentStats_args(ctx context.Context
 		return nil, err
 	}
 	args["fuel"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_modelRuns_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
 	return args, nil
 }
 
@@ -1743,16 +2106,16 @@ func (ec *executionContext) fieldContext_DepartmentStats_trend30d(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ModelPerformance_modelVersion(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
+func (ec *executionContext) _FeatureImportance_feature(ctx context.Context, field graphql.CollectedField, obj *model.FeatureImportance) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_modelVersion(ctx, field)
+			return ec.fieldContext_FeatureImportance_feature(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.ModelVersion, nil
+			return obj.Feature, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
@@ -1762,66 +2125,20 @@ func (ec *executionContext) _ModelPerformance_modelVersion(ctx context.Context, 
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ModelPerformance_modelVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "String")
+func (ec *executionContext) fieldContext_FeatureImportance_feature(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("FeatureImportance", field, false, false, "String")
 }
 
-func (ec *executionContext) _ModelPerformance_trainedAt(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
+func (ec *executionContext) _FeatureImportance_maeIncrease(ctx context.Context, field graphql.CollectedField, obj *model.FeatureImportance) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_trainedAt(ctx, field)
+			return ec.fieldContext_FeatureImportance_maeIncrease(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.TrainedAt, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
-			return ec.marshalNString2string(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ModelPerformance_trainedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "String")
-}
-
-func (ec *executionContext) _ModelPerformance_horizonDays(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_horizonDays(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.HorizonDays, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
-			return ec.marshalNInt2int(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_ModelPerformance_horizonDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "Int")
-}
-
-func (ec *executionContext) _ModelPerformance_maeModel(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_maeModel(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.MaeModel, nil
+			return obj.MaeIncrease, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
@@ -1831,17 +2148,40 @@ func (ec *executionContext) _ModelPerformance_maeModel(ctx context.Context, fiel
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ModelPerformance_maeModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "Float")
+func (ec *executionContext) fieldContext_FeatureImportance_maeIncrease(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("FeatureImportance", field, false, false, "Float")
 }
 
-func (ec *executionContext) _ModelPerformance_maeBaseline(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
+func (ec *executionContext) _HorizonScore_horizon(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_maeBaseline(ctx, field)
+			return ec.fieldContext_HorizonScore_horizon(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Horizon, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HorizonScore_horizon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Int")
+}
+
+func (ec *executionContext) _HorizonScore_maeBaseline(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HorizonScore_maeBaseline(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
 			return obj.MaeBaseline, nil
@@ -1854,31 +2194,389 @@ func (ec *executionContext) _ModelPerformance_maeBaseline(ctx context.Context, f
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_ModelPerformance_maeBaseline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "Float")
+func (ec *executionContext) fieldContext_HorizonScore_maeBaseline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Float")
 }
 
-func (ec *executionContext) _ModelPerformance_recommendationAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.ModelPerformance) (ret graphql.Marshaler) {
+func (ec *executionContext) _HorizonScore_maeRidge(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_ModelPerformance_recommendationAccuracy(ctx, field)
+			return ec.fieldContext_HorizonScore_maeRidge(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.RecommendationAccuracy, nil
+			return obj.MaeRidge, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
-			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
 		},
 		true,
-		false,
+		true,
 	)
 }
-func (ec *executionContext) fieldContext_ModelPerformance_recommendationAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("ModelPerformance", field, false, false, "Float")
+func (ec *executionContext) fieldContext_HorizonScore_maeRidge(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Float")
+}
+
+func (ec *executionContext) _HorizonScore_maeModel(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HorizonScore_maeModel(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MaeModel, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HorizonScore_maeModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Float")
+}
+
+func (ec *executionContext) _HorizonScore_intervalCoverage(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HorizonScore_intervalCoverage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntervalCoverage, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HorizonScore_intervalCoverage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Float")
+}
+
+func (ec *executionContext) _HorizonScore_beatsBaseline(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HorizonScore_beatsBaseline(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BeatsBaseline, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HorizonScore_beatsBaseline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HorizonScore", field, false, false, "Boolean")
+}
+
+func (ec *executionContext) _HorizonScore_periods(ctx context.Context, field graphql.CollectedField, obj *model.HorizonScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HorizonScore_periods(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Periods, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.PeriodScore) graphql.Marshaler {
+			return ec.marshalNPeriodScore2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPeriodScoreᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HorizonScore_periods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HorizonScore",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PeriodScore(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelRun_modelVersion(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_modelVersion(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ModelVersion, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_modelVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_trainedAt(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_trainedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TrainedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_trainedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_trainStart(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_trainStart(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TrainStart, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_trainStart(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_trainEnd(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_trainEnd(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TrainEnd, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_trainEnd(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_testStart(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_testStart(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TestStart, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_testStart(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_testEnd(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_testEnd(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TestEnd, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_testEnd(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "String")
+}
+
+func (ec *executionContext) _ModelRun_allowedHorizons(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_allowedHorizons(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AllowedHorizons, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []int) graphql.Marshaler {
+			return ec.marshalNInt2ᚕintᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_allowedHorizons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ModelRun", field, false, false, "Int")
+}
+
+func (ec *executionContext) _ModelRun_horizons(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_horizons(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Horizons, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.HorizonScore) graphql.Marshaler {
+			return ec.marshalNHorizonScore2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐHorizonScoreᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_horizons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelRun",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HorizonScore(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelRun_recommendations(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_recommendations(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Recommendations, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.RecommendationStats) graphql.Marshaler {
+			return ec.marshalNRecommendationStats2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationStats(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_recommendations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelRun",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RecommendationStats(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ModelRun_featureImportance(ctx context.Context, field graphql.CollectedField, obj *model.ModelRun) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ModelRun_featureImportance(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FeatureImportance, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.FeatureImportance) graphql.Marshaler {
+			return ec.marshalNFeatureImportance2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐFeatureImportanceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ModelRun_featureImportance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ModelRun",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_FeatureImportance(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _OpeningDay_day(ctx context.Context, field graphql.CollectedField, obj *model.OpeningDay) (ret graphql.Marshaler) {
@@ -2037,6 +2735,75 @@ func (ec *executionContext) fieldContext_OpeningHours_days(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _PeriodScore_name(ctx context.Context, field graphql.CollectedField, obj *model.PeriodScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PeriodScore_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PeriodScore_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PeriodScore", field, false, false, "String")
+}
+
+func (ec *executionContext) _PeriodScore_maeBaseline(ctx context.Context, field graphql.CollectedField, obj *model.PeriodScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PeriodScore_maeBaseline(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MaeBaseline, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PeriodScore_maeBaseline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PeriodScore", field, false, false, "Float")
+}
+
+func (ec *executionContext) _PeriodScore_maeModel(ctx context.Context, field graphql.CollectedField, obj *model.PeriodScore) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PeriodScore_maeModel(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.MaeModel, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PeriodScore_maeModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PeriodScore", field, false, false, "Float")
+}
+
 func (ec *executionContext) _PredictedPoint_date(ctx context.Context, field graphql.CollectedField, obj *model.PredictedPoint) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2129,6 +2896,52 @@ func (ec *executionContext) fieldContext_PredictedPoint_high(_ context.Context, 
 	return graphql.NewScalarFieldContext("PredictedPoint", field, false, false, "Float")
 }
 
+func (ec *executionContext) _Prediction_baseDate(ctx context.Context, field graphql.CollectedField, obj *model.Prediction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Prediction_baseDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BaseDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Prediction_baseDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Prediction", field, false, false, "String")
+}
+
+func (ec *executionContext) _Prediction_basePrice(ctx context.Context, field graphql.CollectedField, obj *model.Prediction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Prediction_basePrice(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BasePrice, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Prediction_basePrice(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Prediction", field, false, false, "Float")
+}
+
 func (ec *executionContext) _Prediction_horizon(ctx context.Context, field graphql.CollectedField, obj *model.Prediction) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2173,11 +2986,11 @@ func (ec *executionContext) _Prediction_recommendation(ctx context.Context, fiel
 			return obj.Recommendation, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v model.Recommendation) graphql.Marshaler {
-			return ec.marshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Recommendation) graphql.Marshaler {
+			return ec.marshalORecommendation2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx, selections, v)
 		},
 		true,
-		true,
+		false,
 	)
 }
 func (ec *executionContext) fieldContext_Prediction_recommendation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2542,34 +3355,46 @@ func (ec *executionContext) fieldContext_Query_departmentAverages(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_modelPerformance(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_modelRuns(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Query_modelPerformance(ctx, field)
+			return ec.fieldContext_Query_modelRuns(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Query().ModelPerformance(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().ModelRuns(ctx, fc.Args["limit"].(*int))
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.ModelPerformance) graphql.Marshaler {
-			return ec.marshalNModelPerformance2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelPerformanceᚄ(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.ModelRun) graphql.Marshaler {
+			return ec.marshalNModelRun2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelRunᚄ(ctx, selections, v)
 		},
 		true,
 		true,
 	)
 }
-func (ec *executionContext) fieldContext_Query_modelPerformance(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_modelRuns(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_ModelPerformance(ctx, field)
+			return ec.childFields_ModelRun(ctx, field)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_modelRuns_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2648,6 +3473,236 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationStats_accuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_accuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Accuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_accuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationStats_waitCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_waitCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WaitCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_waitCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationStats_fillNowCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_fillNowCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FillNowCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_fillNowCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationStats_stableCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_stableCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StableCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_stableCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationStats_noneCount(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_noneCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NoneCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_noneCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RecommendationStats_waitAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_waitAccuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WaitAccuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_waitAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationStats_fillNowAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_fillNowAccuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FillNowAccuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_fillNowAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationStats_stableAccuracy(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_stableAccuracy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.StableAccuracy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_stableAccuracy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationStats_waitGainCents(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_waitGainCents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WaitGainCents, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_waitGainCents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
+}
+
+func (ec *executionContext) _RecommendationStats_fillNowGainCents(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationStats) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RecommendationStats_fillNowGainCents(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FillNowGainCents, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_RecommendationStats_fillNowGainCents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RecommendationStats", field, false, false, "Float")
 }
 
 func (ec *executionContext) _Station_id(ctx context.Context, field graphql.CollectedField, obj *model.Station) (ret graphql.Marshaler) {
@@ -4325,45 +5380,166 @@ func (ec *executionContext) _DepartmentStats(ctx context.Context, sel ast.Select
 	return out
 }
 
-var modelPerformanceImplementors = []string{"ModelPerformance"}
+var featureImportanceImplementors = []string{"FeatureImportance"}
 
-func (ec *executionContext) _ModelPerformance(ctx context.Context, sel ast.SelectionSet, obj *model.ModelPerformance) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, modelPerformanceImplementors)
+func (ec *executionContext) _FeatureImportance(ctx context.Context, sel ast.SelectionSet, obj *model.FeatureImportance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, featureImportanceImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := graphql.NewDeferredGroup(ctx)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("ModelPerformance")
-		case "modelVersion":
-			out.Values[i] = ec._ModelPerformance_modelVersion(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("FeatureImportance")
+		case "feature":
+			out.Values[i] = ec._FeatureImportance_feature(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "trainedAt":
-			out.Values[i] = ec._ModelPerformance_trainedAt(ctx, field, obj)
+		case "maeIncrease":
+			out.Values[i] = ec._FeatureImportance_maeIncrease(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "horizonDays":
-			out.Values[i] = ec._ModelPerformance_horizonDays(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "maeModel":
-			out.Values[i] = ec._ModelPerformance_maeModel(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var horizonScoreImplementors = []string{"HorizonScore"}
+
+func (ec *executionContext) _HorizonScore(ctx context.Context, sel ast.SelectionSet, obj *model.HorizonScore) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, horizonScoreImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HorizonScore")
+		case "horizon":
+			out.Values[i] = ec._HorizonScore_horizon(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "maeBaseline":
-			out.Values[i] = ec._ModelPerformance_maeBaseline(ctx, field, obj)
+			out.Values[i] = ec._HorizonScore_maeBaseline(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "recommendationAccuracy":
-			out.Values[i] = ec._ModelPerformance_recommendationAccuracy(ctx, field, obj)
-			if out.Values[i] == graphql.RequiredNull {
+		case "maeRidge":
+			out.Values[i] = ec._HorizonScore_maeRidge(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maeModel":
+			out.Values[i] = ec._HorizonScore_maeModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "intervalCoverage":
+			out.Values[i] = ec._HorizonScore_intervalCoverage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "beatsBaseline":
+			out.Values[i] = ec._HorizonScore_beatsBaseline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "periods":
+			out.Values[i] = ec._HorizonScore_periods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var modelRunImplementors = []string{"ModelRun"}
+
+func (ec *executionContext) _ModelRun(ctx context.Context, sel ast.SelectionSet, obj *model.ModelRun) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, modelRunImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ModelRun")
+		case "modelVersion":
+			out.Values[i] = ec._ModelRun_modelVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trainedAt":
+			out.Values[i] = ec._ModelRun_trainedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trainStart":
+			out.Values[i] = ec._ModelRun_trainStart(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trainEnd":
+			out.Values[i] = ec._ModelRun_trainEnd(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "testStart":
+			out.Values[i] = ec._ModelRun_testStart(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "testEnd":
+			out.Values[i] = ec._ModelRun_testEnd(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "allowedHorizons":
+			out.Values[i] = ec._ModelRun_allowedHorizons(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "horizons":
+			out.Values[i] = ec._ModelRun_horizons(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recommendations":
+			out.Values[i] = ec._ModelRun_recommendations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "featureImportance":
+			out.Values[i] = ec._ModelRun_featureImportance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		default:
@@ -4469,6 +5645,49 @@ func (ec *executionContext) _OpeningHours(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var periodScoreImplementors = []string{"PeriodScore"}
+
+func (ec *executionContext) _PeriodScore(ctx context.Context, sel ast.SelectionSet, obj *model.PeriodScore) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, periodScoreImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PeriodScore")
+		case "name":
+			out.Values[i] = ec._PeriodScore_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maeBaseline":
+			out.Values[i] = ec._PeriodScore_maeBaseline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maeModel":
+			out.Values[i] = ec._PeriodScore_maeModel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
 var predictedPointImplementors = []string{"PredictedPoint"}
 
 func (ec *executionContext) _PredictedPoint(ctx context.Context, sel ast.SelectionSet, obj *model.PredictedPoint) graphql.Marshaler {
@@ -4528,6 +5747,16 @@ func (ec *executionContext) _Prediction(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Prediction")
+		case "baseDate":
+			out.Values[i] = ec._Prediction_baseDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "basePrice":
+			out.Values[i] = ec._Prediction_basePrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "horizon":
 			out.Values[i] = ec._Prediction_horizon(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4535,7 +5764,7 @@ func (ec *executionContext) _Prediction(ctx context.Context, sel ast.SelectionSe
 			}
 		case "recommendation":
 			out.Values[i] = ec._Prediction_recommendation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		case "confidence":
@@ -4662,11 +5891,11 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_departmentAverages(ctx, field)
 				})
-		case "modelPerformance":
+		case "modelRuns":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
 				true, true,
 				func(ctx context.Context) graphql.Marshaler {
-					return ec._Query_modelPerformance(ctx, field)
+					return ec._Query_modelRuns(ctx, field)
 				})
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -4681,6 +5910,84 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var recommendationStatsImplementors = []string{"RecommendationStats"}
+
+func (ec *executionContext) _RecommendationStats(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendationStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendationStats")
+		case "accuracy":
+			out.Values[i] = ec._RecommendationStats_accuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "waitCount":
+			out.Values[i] = ec._RecommendationStats_waitCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fillNowCount":
+			out.Values[i] = ec._RecommendationStats_fillNowCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stableCount":
+			out.Values[i] = ec._RecommendationStats_stableCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "noneCount":
+			out.Values[i] = ec._RecommendationStats_noneCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "waitAccuracy":
+			out.Values[i] = ec._RecommendationStats_waitAccuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "fillNowAccuracy":
+			out.Values[i] = ec._RecommendationStats_fillNowAccuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "stableAccuracy":
+			out.Values[i] = ec._RecommendationStats_stableAccuracy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "waitGainCents":
+			out.Values[i] = ec._RecommendationStats_waitGainCents(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "fillNowGainCents":
+			out.Values[i] = ec._RecommendationStats_fillNowGainCents(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5262,6 +6569,30 @@ func (ec *executionContext) marshalNDepartmentAverage2ᚖgithubᚗcomᚋManuelDa
 	return ec._DepartmentAverage(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNFeatureImportance2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐFeatureImportanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeatureImportance) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNFeatureImportance2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐFeatureImportance(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFeatureImportance2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐFeatureImportance(ctx context.Context, sel ast.SelectionSet, v *model.FeatureImportance) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "FeatureImportance!")
+		return graphql.Null
+	}
+	return ec._FeatureImportance(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5284,6 +6615,30 @@ func (ec *executionContext) unmarshalNFuel2githubᚗcomᚋManuelDavid69ᚋpumpca
 
 func (ec *executionContext) marshalNFuel2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐFuel(ctx context.Context, sel ast.SelectionSet, v model.Fuel) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNHorizonScore2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐHorizonScoreᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HorizonScore) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHorizonScore2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐHorizonScore(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNHorizonScore2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐHorizonScore(ctx context.Context, sel ast.SelectionSet, v *model.HorizonScore) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "HorizonScore!")
+		return graphql.Null
+	}
+	return ec._HorizonScore(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -5343,11 +6698,40 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNModelPerformance2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelPerformanceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ModelPerformance) graphql.Marshaler {
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v any) ([]int, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNModelRun2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelRunᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ModelRun) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
 		fc.Result = &v[i]
-		return ec.marshalNModelPerformance2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelPerformance(ctx, sel, v[i])
+		return ec.marshalNModelRun2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelRun(ctx, sel, v[i])
 	})
 
 	for _, e := range ret {
@@ -5359,12 +6743,12 @@ func (ec *executionContext) marshalNModelPerformance2ᚕᚖgithubᚗcomᚋManuel
 	return ret
 }
 
-func (ec *executionContext) marshalNModelPerformance2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelPerformance(ctx context.Context, sel ast.SelectionSet, v *model.ModelPerformance) graphql.Marshaler {
+func (ec *executionContext) marshalNModelRun2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐModelRun(ctx context.Context, sel ast.SelectionSet, v *model.ModelRun) graphql.Marshaler {
 	if v == nil {
-		graphql.AddInvalidNullError(ctx, "ModelPerformance!")
+		graphql.AddInvalidNullError(ctx, "ModelRun!")
 		return graphql.Null
 	}
-	return ec._ModelPerformance(ctx, sel, v)
+	return ec._ModelRun(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNOpeningDay2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐOpeningDayᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.OpeningDay) graphql.Marshaler {
@@ -5397,6 +6781,30 @@ func (ec *executionContext) marshalNOpeningHours2ᚖgithubᚗcomᚋManuelDavid69
 		return graphql.Null
 	}
 	return ec._OpeningHours(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPeriodScore2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPeriodScoreᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PeriodScore) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPeriodScore2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPeriodScore(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPeriodScore2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPeriodScore(ctx context.Context, sel ast.SelectionSet, v *model.PeriodScore) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "PeriodScore!")
+		return graphql.Null
+	}
+	return ec._PeriodScore(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPredictedPoint2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐPredictedPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PredictedPoint) graphql.Marshaler {
@@ -5447,14 +6855,12 @@ func (ec *executionContext) marshalNPricePoint2ᚖgithubᚗcomᚋManuelDavid69�
 	return ec._PricePoint(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, v any) (model.Recommendation, error) {
-	var res model.Recommendation
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNRecommendation2githubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, sel ast.SelectionSet, v model.Recommendation) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNRecommendationStats2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendationStats(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationStats) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "RecommendationStats!")
+		return graphql.Null
+	}
+	return ec._RecommendationStats(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNStation2ᚕᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐStationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Station) graphql.Marshaler {
@@ -5783,6 +7189,22 @@ func (ec *executionContext) marshalOPrediction2ᚖgithubᚗcomᚋManuelDavid69�
 		return graphql.Null
 	}
 	return ec._Prediction(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORecommendation2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, v any) (*model.Recommendation, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.Recommendation)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalORecommendation2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐRecommendation(ctx context.Context, sel ast.SelectionSet, v *model.Recommendation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOStation2ᚖgithubᚗcomᚋManuelDavid69ᚋpumpcastᚋapiᚋgraphᚋmodelᚐStation(ctx context.Context, sel ast.SelectionSet, v *model.Station) graphql.Marshaler {

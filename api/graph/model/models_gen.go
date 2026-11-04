@@ -22,13 +22,32 @@ type DepartmentAverage struct {
 	StationCount int     `json:"stationCount"`
 }
 
-type ModelPerformance struct {
-	ModelVersion           string   `json:"modelVersion"`
-	TrainedAt              string   `json:"trainedAt"`
-	HorizonDays            int      `json:"horizonDays"`
-	MaeModel               float64  `json:"maeModel"`
-	MaeBaseline            float64  `json:"maeBaseline"`
-	RecommendationAccuracy *float64 `json:"recommendationAccuracy,omitempty"`
+type FeatureImportance struct {
+	Feature     string  `json:"feature"`
+	MaeIncrease float64 `json:"maeIncrease"`
+}
+
+type HorizonScore struct {
+	Horizon          int            `json:"horizon"`
+	MaeBaseline      float64        `json:"maeBaseline"`
+	MaeRidge         float64        `json:"maeRidge"`
+	MaeModel         float64        `json:"maeModel"`
+	IntervalCoverage float64        `json:"intervalCoverage"`
+	BeatsBaseline    bool           `json:"beatsBaseline"`
+	Periods          []*PeriodScore `json:"periods"`
+}
+
+type ModelRun struct {
+	ModelVersion      string               `json:"modelVersion"`
+	TrainedAt         string               `json:"trainedAt"`
+	TrainStart        string               `json:"trainStart"`
+	TrainEnd          string               `json:"trainEnd"`
+	TestStart         string               `json:"testStart"`
+	TestEnd           string               `json:"testEnd"`
+	AllowedHorizons   []int                `json:"allowedHorizons"`
+	Horizons          []*HorizonScore      `json:"horizons"`
+	Recommendations   *RecommendationStats `json:"recommendations"`
+	FeatureImportance []*FeatureImportance `json:"featureImportance"`
 }
 
 type OpeningDay struct {
@@ -43,6 +62,12 @@ type OpeningHours struct {
 	Days        []*OpeningDay `json:"days"`
 }
 
+type PeriodScore struct {
+	Name        string  `json:"name"`
+	MaeBaseline float64 `json:"maeBaseline"`
+	MaeModel    float64 `json:"maeModel"`
+}
+
 type PredictedPoint struct {
 	Date  string  `json:"date"`
 	Price float64 `json:"price"`
@@ -51,8 +76,10 @@ type PredictedPoint struct {
 }
 
 type Prediction struct {
+	BaseDate       string            `json:"baseDate"`
+	BasePrice      float64           `json:"basePrice"`
 	Horizon        []*PredictedPoint `json:"horizon"`
-	Recommendation Recommendation    `json:"recommendation"`
+	Recommendation *Recommendation   `json:"recommendation,omitempty"`
 	Confidence     float64           `json:"confidence"`
 	Reasons        []string          `json:"reasons"`
 	ModelVersion   string            `json:"modelVersion"`
@@ -65,6 +92,19 @@ type PricePoint struct {
 }
 
 type Query struct {
+}
+
+type RecommendationStats struct {
+	Accuracy         *float64 `json:"accuracy,omitempty"`
+	WaitCount        int      `json:"waitCount"`
+	FillNowCount     int      `json:"fillNowCount"`
+	StableCount      int      `json:"stableCount"`
+	NoneCount        int      `json:"noneCount"`
+	WaitAccuracy     *float64 `json:"waitAccuracy,omitempty"`
+	FillNowAccuracy  *float64 `json:"fillNowAccuracy,omitempty"`
+	StableAccuracy   *float64 `json:"stableAccuracy,omitempty"`
+	WaitGainCents    *float64 `json:"waitGainCents,omitempty"`
+	FillNowGainCents *float64 `json:"fillNowGainCents,omitempty"`
 }
 
 type TimeSlot struct {

@@ -20,13 +20,12 @@ import (
 // Limites des paramètres, pour qu'une seule requête ne puisse pas faire
 // tomber la base (par exemple 1000 stations avec 10 ans d'historique)
 const (
-	maxRadiusKm     = 50.0
-	maxLimit        = 100
-	maxHistoryDays  = 365
-	maxCompared     = 5
-	nearbyOversize  = 5   // on demande plus de stations à Mongo pour filtrer ensuite
-	maxNearbyFetch  = 500 // sans jamais dépasser ce nombre
-	performanceRuns = 20
+	maxRadiusKm    = 50.0
+	maxLimit       = 100
+	maxHistoryDays = 365
+	maxCompared    = 5
+	nearbyOversize = 5   // on demande plus de stations à Mongo pour filtrer ensuite
+	maxNearbyFetch = 500 // sans jamais dépasser ce nombre
 )
 
 // Resolver regroupe les dépendances partagées par tous les resolvers
@@ -99,17 +98,22 @@ var recommendations = map[string]model.Recommendation{
 }
 
 func toPrediction(p *predictions.Prediction) (*model.Prediction, error) {
-	rec, ok := recommendations[p.Recommendation]
-	if !ok {
-		return nil, fmt.Errorf("recommandation inconnue en base : %q", p.Recommendation)
-	}
 	out := &model.Prediction{
-		Recommendation: rec,
-		Confidence:     p.Confidence,
-		Reasons:        p.Reasons,
-		ModelVersion:   p.ModelVersion,
-		GeneratedAt:    p.GeneratedAt.In(ingest.Paris).Format(time.RFC3339),
-		Horizon:        make([]*model.PredictedPoint, len(p.Horizon)),
+		BaseDate:     formatDay(p.BaseDate),
+		BasePrice:    p.BasePrice,
+		Confidence:   p.Confidence,
+		Reasons:      p.Reasons,
+		ModelVersion: p.ModelVersion,
+		GeneratedAt:  p.GeneratedAt.In(ingest.Paris).Format(time.RFC3339),
+		Horizon:      make([]*model.PredictedPoint, len(p.Horizon)),
+	}
+	// Pas de recommandation quand le modèle n'est pas assez fiable
+	if p.Recommendation != nil {
+		rec, ok := recommendations[*p.Recommendation]
+		if !ok {
+			return nil, fmt.Errorf("recommandation inconnue en base : %q", *p.Recommendation)
+		}
+		out.Recommendation = &rec
 	}
 	if out.Reasons == nil {
 		out.Reasons = []string{}
@@ -139,6 +143,65 @@ func toAverages(list []stats.DepartmentDaily) []*model.DepartmentAverage {
 	out := make([]*model.DepartmentAverage, len(list))
 	for i, d := range list {
 		out[i] = &model.DepartmentAverage{Department: d.Meta.Department, AvgPrice: d.AvgPrice, StationCount: d.StationCount}
+	}
+	return out
+}
+
+// Noms lisibles des périodes de test enregistrées par train.py
+var periodNames = map[string]string{
+	"nov2025_fev2026": "Novembre 2025 à février 2026",
+	"mars_oct2026":    "Mars à octobre 2026",
+}
+
+func toModelRun(run predictions.ModelRun) *model.ModelRun {
+	day := func(t time.Time) string { return formatDay(t) }
+	rs := run.Metrics.Recommendations
+	out := &model.ModelRun{
+		ModelVersion:    run.ModelVersion,
+		TrainedAt:       run.TrainedAt.In(ingest.Paris).Format(time.RFC3339),
+		TrainStart:      day(run.TrainPeriod.Start),
+		TrainEnd:        day(run.TrainPeriod.End),
+		TestStart:       day(run.TestPeriod.Start),
+		TestEnd:         day(run.TestPeriod.End),
+		AllowedHorizons: run.AllowedHorizons,
+		Horizons:        []*model.HorizonScore{},
+		Recommendations: &model.RecommendationStats{
+			Accuracy:         rs.Accuracy,
+			WaitCount:        rs.Counts["wait"],
+			FillNowCount:     rs.Counts["fill_now"],
+			StableCount:      rs.Counts["stable"],
+			NoneCount:        rs.Counts["none"],
+			WaitAccuracy:     rs.AccuracyByKind["wait"],
+			FillNowAccuracy:  rs.AccuracyByKind["fill_now"],
+			StableAccuracy:   rs.AccuracyByKind["stable"],
+			WaitGainCents:    rs.AvgGainCents["wait"],
+			FillNowGainCents: rs.AvgGainCents["fill_now"],
+		},
+		FeatureImportance: []*model.FeatureImportance{},
+	}
+	if out.AllowedHorizons == nil {
+		out.AllowedHorizons = []int{}
+	}
+	for _, h := range run.Metrics.Horizons {
+		score := &model.HorizonScore{
+			Horizon:          h.Horizon,
+			MaeBaseline:      h.MAEBaseline,
+			MaeRidge:         h.MAERidge,
+			MaeModel:         h.MAEModel,
+			IntervalCoverage: h.IntervalCoverage,
+			BeatsBaseline:    h.BeatsBaseline,
+			Periods:          []*model.PeriodScore{},
+		}
+		// Ordre fixe des périodes, une map Go n'a pas d'ordre
+		for _, key := range []string{"nov2025_fev2026", "mars_oct2026"} {
+			if p, ok := h.ByPeriod[key]; ok {
+				score.Periods = append(score.Periods, &model.PeriodScore{Name: periodNames[key], MaeBaseline: p.MAEBaseline, MaeModel: p.MAEModel})
+			}
+		}
+		out.Horizons = append(out.Horizons, score)
+	}
+	for _, f := range run.Metrics.FeatureImportance {
+		out.FeatureImportance = append(out.FeatureImportance, &model.FeatureImportance{Feature: f.Feature, MaeIncrease: f.MAEIncrease})
 	}
 	return out
 }

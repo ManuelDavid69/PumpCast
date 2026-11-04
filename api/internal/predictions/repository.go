@@ -1,7 +1,8 @@
 // Package predictions lit les prédictions et les scores du modèle.
 //
-// Ces collections sont écrites par les scripts Python (phase 5), l'API ne
-// fait que les lire. Les structs ci-dessous fixent donc le format attendu.
+// Ces collections sont écrites par les scripts Python (ml/pumpcast_ml/predict.py
+// et train.py), l'API ne fait que les lire. Les structs ci-dessous suivent le
+// format de ces scripts.
 package predictions
 
 import (
@@ -23,30 +24,63 @@ type Point struct {
 
 // Prediction est la prédiction d'un carburant pour une station (J+1 à J+7).
 type Prediction struct {
-	StationID      string    `bson:"station_id"`
-	Fuel           string    `bson:"fuel"`
-	GeneratedAt    time.Time `bson:"generated_at"`
-	ModelVersion   string    `bson:"model_version"`
-	Horizon        []Point   `bson:"horizon"`
-	Recommendation string    `bson:"recommendation"` // fill_now, wait ou stable
-	Confidence     float64   `bson:"confidence"`
-	Reasons        []string  `bson:"reasons"`
+	StationID    string    `bson:"station_id"`
+	Fuel         string    `bson:"fuel"`
+	GeneratedAt  time.Time `bson:"generated_at"`
+	BaseDate     time.Time `bson:"base_date"`
+	BasePrice    float64   `bson:"base_price"`
+	ModelVersion string    `bson:"model_version"`
+	Horizon      []Point   `bson:"horizon"`
+	// fill_now, wait, stable, ou nil quand le modèle n'est pas assez fiable
+	Recommendation *string  `bson:"recommendation"`
+	Confidence     float64  `bson:"confidence"`
+	Reasons        []string `bson:"reasons"`
+}
+
+type PeriodScore struct {
+	MAEBaseline float64 `bson:"mae_baseline"`
+	MAEModel    float64 `bson:"mae_model"`
 }
 
 // HorizonScore est le score du modèle pour un horizon (J+h).
 type HorizonScore struct {
-	Horizon                int      `bson:"horizon"`
-	MAEModel               float64  `bson:"mae_model"`
-	MAEBaseline            float64  `bson:"mae_baseline"`
-	RecommendationAccuracy *float64 `bson:"recommendation_accuracy"`
+	Horizon          int                    `bson:"horizon"`
+	MAEBaseline      float64                `bson:"mae_baseline"`
+	MAERidge         float64                `bson:"mae_ridge"`
+	MAEModel         float64                `bson:"mae_model"`
+	IntervalCoverage float64                `bson:"interval_coverage"`
+	BeatsBaseline    bool                   `bson:"beats_baseline"`
+	ByPeriod         map[string]PeriodScore `bson:"by_period"`
+}
+
+type RecommendationStats struct {
+	Accuracy       *float64            `bson:"accuracy"`
+	Counts         map[string]int      `bson:"counts"`
+	AccuracyByKind map[string]*float64 `bson:"accuracy_by_kind"`
+	AvgGainCents   map[string]*float64 `bson:"avg_gain_cents"`
+}
+
+type FeatureImportance struct {
+	Feature     string  `bson:"feature"`
+	MAEIncrease float64 `bson:"mae_increase"`
+}
+
+type Period struct {
+	Start time.Time `bson:"start"`
+	End   time.Time `bson:"end"`
 }
 
 // ModelRun est un entraînement du modèle et ses scores sur la période de test.
 type ModelRun struct {
-	ModelVersion string    `bson:"model_version"`
-	TrainedAt    time.Time `bson:"trained_at"`
-	Metrics      struct {
-		Horizons []HorizonScore `bson:"horizons"`
+	ModelVersion    string    `bson:"model_version"`
+	TrainedAt       time.Time `bson:"trained_at"`
+	TrainPeriod     Period    `bson:"train_period"`
+	TestPeriod      Period    `bson:"test_period"`
+	AllowedHorizons []int     `bson:"allowed_horizons"`
+	Metrics         struct {
+		Horizons          []HorizonScore      `bson:"horizons"`
+		Recommendations   RecommendationStats `bson:"recommendations"`
+		FeatureImportance []FeatureImportance `bson:"feature_importance"`
 	} `bson:"metrics"`
 }
 

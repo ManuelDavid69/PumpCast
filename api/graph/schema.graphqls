@@ -91,8 +91,14 @@ type PredictedPoint {
 }
 
 type Prediction {
+  # Jour et prix de départ de la prévision (le dernier prix connu)
+  baseDate: String!
+  basePrice: Float!
+  # Seulement les horizons où le modèle bat la baseline "le prix ne bouge pas"
   horizon: [PredictedPoint!]!
-  recommendation: Recommendation!
+  # Nulle quand aucun horizon des 3 prochains jours n'est assez fiable :
+  # on préfère ne rien conseiller que conseiller au hasard
+  recommendation: Recommendation
   confidence: Float!
   reasons: [String!]!
   modelVersion: String!
@@ -119,13 +125,58 @@ type DepartmentAverage {
   stationCount: Int!
 }
 
-type ModelPerformance {
+# Un entraînement du modèle et ses scores sur la période de test
+type ModelRun {
   modelVersion: String!
   trainedAt: String!
-  horizonDays: Int!
-  maeModel: Float!
+  trainStart: String!
+  trainEnd: String!
+  testStart: String!
+  testEnd: String!
+  # Horizons utilisés par l'appli (ceux qui battent la baseline)
+  allowedHorizons: [Int!]!
+  horizons: [HorizonScore!]!
+  recommendations: RecommendationStats!
+  featureImportance: [FeatureImportance!]!
+}
+
+# Erreurs moyennes (MAE) en centimes sur la période de test
+type HorizonScore {
+  horizon: Int!
   maeBaseline: Float!
-  recommendationAccuracy: Float
+  maeRidge: Float!
+  maeModel: Float!
+  # Part des cas où le vrai prix tombe dans la fourchette (visé : 80 %)
+  intervalCoverage: Float!
+  beatsBaseline: Boolean!
+  periods: [PeriodScore!]!
+}
+
+type PeriodScore {
+  name: String!
+  maeBaseline: Float!
+  maeModel: Float!
+}
+
+# Recommandations rejouées sur la période de test
+type RecommendationStats {
+  accuracy: Float
+  waitCount: Int!
+  fillNowCount: Int!
+  stableCount: Int!
+  noneCount: Int!
+  waitAccuracy: Float
+  fillNowAccuracy: Float
+  stableAccuracy: Float
+  # Gain moyen en centimes par litre en suivant le conseil
+  waitGainCents: Float
+  fillNowGainCents: Float
+}
+
+type FeatureImportance {
+  feature: String!
+  # Hausse de l'erreur (en centimes) quand on brouille cette variable
+  maeIncrease: Float!
 }
 
 type Query {
@@ -145,5 +196,6 @@ type Query {
   departmentStats(department: String!, fuel: Fuel!): DepartmentStats
   # Moyenne du dernier jour pour chaque département, pour la carte de chaleur
   departmentAverages(fuel: Fuel!): [DepartmentAverage!]!
-  modelPerformance: [ModelPerformance!]!
+  # Entraînements du plus récent au plus ancien
+  modelRuns(limit: Int = 10): [ModelRun!]!
 }
