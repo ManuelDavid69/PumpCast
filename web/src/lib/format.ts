@@ -71,6 +71,10 @@ export function formatLongDate(isoDay: string): string {
   return d.getDate() === 1 ? text.replace(/^1 /, "1er ") : text;
 }
 
+// Heure de Paris quelle que soit la machine qui fait le rendu : les serveurs
+// de Vercel sont en UTC, sans ça une mise à jour de 13 h 37 s'affichait 12:37
+const PARIS = "Europe/Paris";
+
 /** Date et heure de mise à jour, relative si c'est récent. */
 export function formatUpdatedAt(iso: string, now: Date = new Date()): string {
   const d = new Date(iso);
@@ -78,13 +82,14 @@ export function formatUpdatedAt(iso: string, now: Date = new Date()): string {
   if (minutes < 60) {
     return `il y a ${Math.max(minutes, 1)} min`;
   }
-  const sameDay = d.toDateString() === now.toDateString();
-  const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  if (sameDay) {
+  const dayOf = (x: Date) => x.toLocaleDateString("fr-FR", { timeZone: PARIS });
+  const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: PARIS });
+  if (dayOf(d) === dayOf(now)) {
     return `aujourd'hui à ${time}`;
   }
-  const day = d.getDate() === 1 ? "1er" : String(d.getDate());
-  return `le ${day} ${d.toLocaleDateString("fr-FR", { month: "long" })}`;
+  const dayNumber = d.toLocaleDateString("fr-FR", { day: "numeric", timeZone: PARIS });
+  const month = d.toLocaleDateString("fr-FR", { month: "long", timeZone: PARIS });
+  return `le ${dayNumber === "1" ? "1er" : dayNumber} ${month}`;
 }
 
 /**

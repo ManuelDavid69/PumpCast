@@ -83,6 +83,14 @@ describe("formatUpdatedAt", () => {
   it("donne la date pour un autre jour", () => {
     expect(formatUpdatedAt("2026-11-01T08:30:00+01:00", now)).toBe("le 1er novembre");
   });
+
+  it("raisonne en heure de Paris même si le serveur est en UTC", () => {
+    // 0 h 50 à Paris le 6, mais encore le 5 en UTC : la mise à jour de la
+    // veille à 13 h 37 n'est pas "aujourd'hui"
+    const afterMidnight = new Date("2026-11-06T00:50:00+01:00");
+    expect(formatUpdatedAt("2026-11-05T13:37:00+01:00", afterMidnight)).toBe("le 5 novembre");
+    expect(formatUpdatedAt("2026-11-04T08:30:00+01:00", now)).toBe("aujourd'hui à 08:30");
+  });
 });
 
 describe("formatLongDate", () => {
