@@ -2,12 +2,15 @@
 # à partir du dépôt (New > Blueprint dans Render).
 services:
   - type: web
-    name: pumpcast-api
-    runtime: docker
+    name: pumpcast
+    # Runtime Go natif de Render : plus rapide à construire que l'image Docker
+    # (le Dockerfile sert pour docker compose en local)
+    runtime: go
     plan: free
     region: frankfurt
-    dockerfilePath: ./api/Dockerfile
-    dockerContext: ./api
+    rootDir: api
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app ./cmd/server
+    startCommand: ./app
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -18,7 +21,7 @@ services:
         sync: false
       - key: INTERNAL_API_KEY
         sync: false
-      # Adresse du front sur Vercel, par exemple https://pumpcast.vercel.app
+      # Adresse du front sur Vercel, par exemple https://pump-cast.vercel.app
       - key: CORS_ORIGINS
         sync: false
       # Render génère un secret aléatoire à la création

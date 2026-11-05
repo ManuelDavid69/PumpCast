@@ -19,6 +19,8 @@ La limite d'Upstash a changé le code : les prix actuels sont rangés dans un se
 2. Database Access : créer un utilisateur avec un mot de passe généré.
 3. Network Access : autoriser `0.0.0.0/0`. GitHub Actions et Render n'ont pas d'IP fixe, la protection repose donc sur le mot de passe.
 4. Copier l'URI `mongodb+srv://...`.
+
+Si l'API plante au démarrage avec `tls: internal error`, c'est que l'étape 3 manque : Atlas coupe la connexion des adresses non autorisées pendant la négociation TLS, d'où ce message peu parlant.
 5. Envoyer les données locales (stations, historique, modèle) vers Atlas, une seule fois :
 
 ```bash
@@ -31,14 +33,14 @@ Créer une base Redis, région `eu-west-1`, et copier l'URL `rediss://...` (avec
 
 ## 3. Render (API)
 
-New > Blueprint, choisir le dépôt : `render.yaml` décrit le service. Render demande ensuite les valeurs à remplir :
+New > Blueprint, choisir le dépôt : `render.yaml` décrit le service (runtime Go, dossier `api`, build de `./cmd/server`). Si le service est créé à la main, reprendre les mêmes réglages : sans `./cmd/server` à la fin de la commande de build, Go ne trouve rien à compiler dans `api/`. Render demande ensuite les valeurs à remplir :
 
 | Variable | Valeur |
 |---|---|
 | `MONGO_URI` | l'URI Atlas |
 | `REDIS_URL` | l'URL Upstash |
 | `INTERNAL_API_KEY` | une longue chaîne aléatoire (`openssl rand -base64 32`), la même que sur Vercel |
-| `CORS_ORIGINS` | l'adresse du site sur Vercel, par exemple `https://pumpcast.vercel.app` |
+| `CORS_ORIGINS` | l'adresse du site sur Vercel, par exemple `https://pump-cast.vercel.app` |
 
 `JWT_SECRET` est généré par Render.
 
@@ -48,7 +50,7 @@ Importer le dépôt avec `web` comme dossier racine, puis ajouter :
 
 | Variable | Valeur |
 |---|---|
-| `NEXT_PUBLIC_GRAPHQL_URL` | `https://<service>.onrender.com/graphql` |
+| `NEXT_PUBLIC_GRAPHQL_URL` | `https://pumpcast.onrender.com/graphql` |
 | `GRAPHQL_URL` | la même adresse |
 | `INTERNAL_API_KEY` | la même valeur que sur Render |
 
