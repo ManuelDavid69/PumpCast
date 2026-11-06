@@ -11,7 +11,7 @@ import { formatLongDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Le modèle de prévision",
-  description: "Comment PumpCast prévoit les prix, et ce que donne le modèle face à « le prix ne bouge pas ».",
+  description: "Comment PumpCast prévoit les prix, et ce que donne le modèle face à « le prix ne bouge pas ».",
 };
 
 // Noms des variables tels qu'on les expliquerait à quelqu'un
@@ -95,7 +95,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
   const best = [...run.horizons].sort((a, b) => a.maeModel / a.maeBaseline - b.maeModel / b.maeBaseline)[0];
   const rec = run.recommendations;
   const crit = run.recommendationCriteria;
-  const enabledNames = run.enabledRecommendations.map((k) => `« ${KIND_NAMES[k]} »`);
+  const enabledNames = run.enabledRecommendations.map((k) => `« ${KIND_NAMES[k]} »`);
   const maxImportance = Math.max(...run.featureImportance.map((f) => f.maeIncrease), 1e-9);
 
   return (
@@ -122,7 +122,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
               </>
             )}{" "}
             Ça paraît peu, mais c&apos;est la vraie difficulté : la plupart des jours, une station ne change pas son prix,
-            et « rien ne bouge » est une prévision très dure à battre.
+            et « rien ne bouge » est une prévision très dure à battre.
           </p>
         )}
         <p className="mt-2 max-w-prose">
@@ -182,7 +182,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           </table>
         </div>
         <p className="mt-2 max-w-prose text-sm text-muted">
-          « Fourchette juste » : part des cas où le vrai prix est tombé dans la fourchette affichée. Elle est prévue pour
+          « Fourchette juste » : part des cas où le vrai prix est tombé dans la fourchette affichée. Elle est prévue pour
           tomber juste 8 fois sur 10.
         </p>
       </section>
@@ -197,7 +197,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           <ul className="mt-2 space-y-1">
             {h3.periods.map((p) => (
               <li key={p.name}>
-                {p.name} : {cents(p.maeModel)} pour le modèle, {cents(p.maeBaseline)} pour « le prix ne bouge pas ».
+                {p.name} : {cents(p.maeModel)} pour le modèle, {cents(p.maeBaseline)} pour « le prix ne bouge pas ».
               </li>
             ))}
           </ul>
@@ -214,7 +214,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           <li>
             Sur la validation (mai à octobre 2025, la période qui sert à faire les choix) : donné au moins{" "}
             {crit.minCountValidation} fois, juste dans au moins {percent(crit.minAccuracyValidation)} des cas, et pour
-            « attends » et « fais le plein », un gain moyen positif.
+            « attends » et « fais le plein », un gain moyen positif.
           </li>
           <li>
             Sur le test (des jours jamais utilisés pour décider) : il doit le confirmer, avec au moins {crit.minCountTest}{" "}
@@ -253,8 +253,8 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
         </div>
         <p className="mt-2 max-w-prose text-sm text-muted">
           Nombre de fois où le conseil aurait été donné, part de conseils justes, et gain moyen par litre en le suivant.
-          Le modèle ne conseille d&apos;agir que quand il est sûr de lui, c&apos;est pour ça que « attends » et « fais le
-          plein » sont rares.
+          Le modèle ne conseille d&apos;agir que quand il est sûr de lui, c&apos;est pour ça que « attends » et « fais le
+          plein » sont rares.
         </p>
 
         <h3 className="mt-6 font-semibold">Et si on avait suivi les conseils activés&nbsp;?</h3>
@@ -267,13 +267,13 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
             <li>Conseils justes : {percent(rec.accuracy)}.</li>
             {rec.waitCount > 0 && rec.waitGainCents !== null && (
               <li>
-                « Attends » donné {rec.waitCount.toLocaleString("fr-FR")} fois, juste dans {percent(rec.waitAccuracy ?? 0)} des
+                « Attends » donné {rec.waitCount.toLocaleString("fr-FR")} fois, juste dans {percent(rec.waitAccuracy ?? 0)} des
                 cas, {cents(rec.waitGainCents, 1)} gagnés par litre en moyenne.
               </li>
             )}
             {rec.fillNowCount > 0 && rec.fillNowGainCents !== null && (
               <li>
-                « Fais le plein » donné {rec.fillNowCount.toLocaleString("fr-FR")} fois, juste dans{" "}
+                « Fais le plein » donné {rec.fillNowCount.toLocaleString("fr-FR")} fois, juste dans{" "}
                 {percent(rec.fillNowAccuracy ?? 0)} des cas, {cents(rec.fillNowGainCents, 1)} gagnés par litre en moyenne.
               </li>
             )}
@@ -305,11 +305,11 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           <li>
             Un seul modèle pour toutes les stations d&apos;Auvergne-Rhône-Alpes et tous les carburants, un par horizon
             (de 1 à 7 jours). C&apos;est un gradient boosting de scikit-learn, comparé à une régression linéaire et à
-            « le prix ne bouge pas ».
+            « le prix ne bouge pas ».
           </li>
           <li>
             Il apprend sur les prix depuis le {formatLongDate(run.trainStart)} et il est testé sur l&apos;année suivante,
-            jamais sur des jours tirés au hasard : sinon il aurait « vu » le futur et les scores seraient faux.
+            jamais sur des jours tirés au hasard : sinon il aurait « vu » le futur et les scores seraient faux.
           </li>
           <li>
             Le cours du pétrole est publié avec une semaine de retard environ. Le modèle n&apos;utilise que le cours qui

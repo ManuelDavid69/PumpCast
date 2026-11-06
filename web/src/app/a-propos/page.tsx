@@ -31,7 +31,7 @@ export default function AboutPage() {
           et le vendredi est le jour des baisses.
         </li>
         <li>
-          Le « fais le plein le lundi, c&apos;est moins cher » ne se vérifie pas : l&apos;écart entre les jours de la
+          Le « fais le plein le lundi, c&apos;est moins cher » ne se vérifie pas : l&apos;écart entre les jours de la
           semaine est d&apos;environ 0,1 centime, soit 5 centimes sur un plein.
         </li>
         <li>
@@ -49,7 +49,7 @@ export default function AboutPage() {
         <Link href="/modele" className="underline">
           Ses résultats sont détaillés ici
         </Link>
-        , y compris là où il ne fait pas mieux que « le prix ne bouge pas ».
+        , y compris là où il ne fait pas mieux que « le prix ne bouge pas ».
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Ce que PumpCast ne sait pas faire</h2>

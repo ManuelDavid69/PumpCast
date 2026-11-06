@@ -177,7 +177,7 @@ export function AccountClient() {
         </h2>
         {me.favorites.length === 0 ? (
           <p className="mt-2 text-[15px] text-muted">
-            Aucune pour l&apos;instant. Ajoute une station depuis sa fiche, avec le bouton « Ajouter aux favoris ».
+            Aucune pour l&apos;instant. Ajoute une station depuis sa fiche, avec le bouton « Ajouter aux favoris ».
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-line border-y border-line bg-white">

@@ -37,7 +37,7 @@ async function CompareView({ searchParams }: PageProps<"/compare">) {
   if (ids.length === 0) {
     return (
       <p className="mt-4 max-w-prose text-[15px] leading-relaxed text-muted">
-        Coche « Comparer » sur les stations de la{" "}
+        Coche « Comparer » sur les stations de la{" "}
         <Link href="/" className="font-medium text-ink underline">
           carte
         </Link>{" "}
