@@ -138,7 +138,9 @@ export function HomeExplorer() {
       </div>
       {geoError && <p className="mb-3 text-sm text-signal-ink">{geoError}</p>}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {/* grid-cols-1 = minmax(0, 1fr) : sans ça, sur mobile, la colonne
+          s'élargit à la taille des adresses et la page défile de côté */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="relative h-[45vh] overflow-hidden rounded border border-line lg:h-[70vh]">
           <StationsMap
             center={place}

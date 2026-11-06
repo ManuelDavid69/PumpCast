@@ -20,7 +20,7 @@ export default function AboutPage() {
       </p>
       <p className="mt-3">
         L&apos;idée de départ est une question que tout le monde se pose devant une pompe : je fais le plein maintenant,
-        ou j&apos;attends quelques jours ? Les applis de prix montrent le prix du jour, pas ce qu&apos;il va devenir.
+        ou j&apos;attends quelques jours&nbsp;? Les applis de prix montrent le prix du jour, pas ce qu&apos;il va devenir.
         J&apos;ai voulu voir jusqu&apos;où on pouvait aller avec les données publiques.
       </p>
 

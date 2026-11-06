@@ -135,7 +135,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
         </p>
         <p className="mt-2 max-w-prose">
           Pour les conseils, la bonne question n&apos;est pas l&apos;erreur moyenne mais : est-ce que les suivre fait
-          gagner de l&apos;argent ?{" "}
+          gagner de l&apos;argent&nbsp;?{" "}
           {enabledNames.length > 0 ? (
             <>Aujourd&apos;hui l&apos;appli donne les conseils {enabledNames.join(", ")}.</>
           ) : (
@@ -257,7 +257,7 @@ function Report({ run, history }: { run: ModelRun; history: ModelRun[] }) {
           plein » sont rares.
         </p>
 
-        <h3 className="mt-6 font-semibold">Et si on avait suivi les conseils activés ?</h3>
+        <h3 className="mt-6 font-semibold">Et si on avait suivi les conseils activés&nbsp;?</h3>
         {rec.accuracy === null ? (
           <p className="mt-2 max-w-prose">
             Sur la période de test, aucun conseil activé n&apos;aurait été donné. Pas de chiffre à afficher, donc.

@@ -99,7 +99,7 @@ async function StationView({ params, searchParams }: PageProps<"/stations/[id]">
           ) : (
             <section aria-labelledby="prediction-title" className="rounded border border-line bg-white p-5">
               <h2 id="prediction-title" className="text-lg font-semibold">
-                Faire le plein maintenant ou attendre ?
+                Faire le plein maintenant ou attendre&nbsp;?
               </h2>
               <PredictionPanel prediction={prediction} fuel={fuel} />
               {/* Pas besoin de le redire si une raison de la prévision en parle déjà */}
