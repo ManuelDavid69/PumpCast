@@ -12,6 +12,8 @@ import type { NearbyStation } from "@/graphql/queries";
 import { splitPrice, type Fuel } from "@/lib/format";
 
 export type LatLng = { lat: number; lng: number };
+// Centre de la carte et rayon qui couvre toute la zone visible
+export type MapView = LatLng & { radiusKm: number };
 
 type Props = {
   center: LatLng;
@@ -24,8 +26,17 @@ type Props = {
   cheapestId: string | null;
   activeId: string | null;
   onSelect: (id: string) => void;
-  onMoved: (center: LatLng) => void;
+  onMoved: (view: MapView) => void;
+  // Vue de la carte juste après s'être calée sur les stations : sert de
+  // référence pour savoir si l'utilisateur a vraiment bougé ou dézoomé
+  onFitted: (view: MapView) => void;
 };
+
+function viewOf(map: L.Map): MapView {
+  const c = map.getCenter();
+  // Du centre au coin de la carte : le cercle de recherche couvre tout ce qu'on voit
+  return { lat: c.lat, lng: c.lng, radiusKm: c.distanceTo(map.getBounds().getNorthEast()) / 1000 };
+}
 
 function priceIcon(station: NearbyStation, fuel: Fuel, cheapest: boolean, active: boolean) {
   const current = station.currentPrices.find((p) => p.fuel === fuel);
@@ -48,11 +59,13 @@ function FitToStations({
   placeKey,
   ready,
   stations,
+  onFitted,
 }: {
   center: LatLng;
   placeKey: string;
   ready: boolean;
   stations: NearbyStation[];
+  onFitted: (view: MapView) => void;
 }) {
   const map = useMap();
   const fitted = useRef<string | null>(null);
@@ -70,29 +83,29 @@ function FitToStations({
     if (fitted.current === placeKey || !ready) {
       return;
     }
+    // Sans animation : la vue est à jour tout de suite pour onFitted
     if (stations.length === 0) {
-      map.setView([center.lat, center.lng], 13);
-      return;
+      map.setView([center.lat, center.lng], 13, { animate: false });
+    } else {
+      map.invalidateSize();
+      const bounds = L.latLngBounds(stations.map((s) => [s.latitude as number, s.longitude as number]));
+      map.fitBounds(bounds.extend([center.lat, center.lng]), { padding: [30, 30], maxZoom: 15, animate: false });
     }
-    map.invalidateSize();
-    const bounds = L.latLngBounds(stations.map((s) => [s.latitude as number, s.longitude as number]));
-    map.fitBounds(bounds.extend([center.lat, center.lng]), { padding: [30, 30], maxZoom: 15 });
     fitted.current = placeKey;
-  }, [placeKey, ready, stations, center.lat, center.lng, map]);
+    onFitted(viewOf(map));
+  }, [placeKey, ready, stations, center.lat, center.lng, map, onFitted]);
   return null;
 }
 
-function MoveWatcher({ onMoved }: { onMoved: (c: LatLng) => void }) {
+function MoveWatcher({ onMoved }: { onMoved: (view: MapView) => void }) {
   useMapEvents({
-    moveend: (e) => {
-      const c = e.target.getCenter();
-      onMoved({ lat: c.lat, lng: c.lng });
-    },
+    // moveend part aussi après un zoom
+    moveend: (e) => onMoved(viewOf(e.target as L.Map)),
   });
   return null;
 }
 
-export default function StationsMap({ center, placeKey, ready, stations, fuel, cheapestId, activeId, onSelect, onMoved }: Props) {
+export default function StationsMap({ center, placeKey, ready, stations, fuel, cheapestId, activeId, onSelect, onMoved, onFitted }: Props) {
   const located = useMemo(
     () => stations.filter((s) => s.latitude !== null && s.longitude !== null),
     [stations],
@@ -104,7 +117,7 @@ export default function StationsMap({ center, placeKey, ready, stations, fuel, c
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FitToStations center={center} placeKey={placeKey} ready={ready} stations={located} />
+      <FitToStations center={center} placeKey={placeKey} ready={ready} stations={located} onFitted={onFitted} />
       <MoveWatcher onMoved={onMoved} />
       {located.map((s) => (
         <Marker

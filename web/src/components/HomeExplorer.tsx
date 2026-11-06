@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { CitySearch, type Place } from "@/components/CitySearch";
 import { FuelPicker } from "@/components/FuelPicker";
 import { Price } from "@/components/Price";
-import type { LatLng } from "@/components/StationsMap";
+import type { LatLng, MapView } from "@/components/StationsMap";
 import { STATIONS_NEAR, type NearbyStation } from "@/graphql/queries";
 import { useCompareSelection, MAX_COMPARED } from "@/lib/compare";
 import { FUEL_LABELS, formatName, formatDistance, formatUpdatedAt, type Fuel } from "@/lib/format";
@@ -21,7 +21,10 @@ const StationsMap = dynamic(() => import("@/components/StationsMap"), {
 
 const QUERY = gql(STATIONS_NEAR);
 const LYON: Place = { label: "Lyon", lat: 45.764, lng: 4.8357 };
-const RADIUS_KM = 5;
+// Autour d'une ville, 5 km suffisent en ville dense. Quand on dézoome puis
+// "Chercher dans cette zone", le rayon suit la carte (borné par l'API à 50 km)
+const DEFAULT_RADIUS_KM = 5;
+const MAX_RADIUS_KM = 30;
 
 type Data = { stationsNear: NearbyStation[] };
 type Sort = "PRICE" | "DISTANCE";
@@ -41,13 +44,15 @@ export function HomeExplorer() {
   const [place, setPlace] = useState<Place>(LYON);
   const [fuel, setFuel] = useState<Fuel>("GAZOLE");
   const [sort, setSort] = useState<Sort>("PRICE");
-  const [moved, setMoved] = useState<LatLng | null>(null);
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [moved, setMoved] = useState<MapView | null>(null);
+  const [fittedView, setFittedView] = useState<MapView | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const compare = useCompareSelection();
 
   const { data, previousData, loading, error } = useQuery<Data>(QUERY, {
-    variables: { lat: place.lat, lng: place.lng, radiusKm: RADIUS_KM, fuel, sort, limit: 40 },
+    variables: { lat: place.lat, lng: place.lng, radiusKm, fuel, sort, limit: 100 },
   });
   // Pendant le chargement on garde les stations précédentes au lieu de vider la carte
   const current = (data ?? previousData)?.stationsNear;
@@ -74,6 +79,7 @@ export function HomeExplorer() {
       (pos) => {
         setGeoError(null);
         setMoved(null);
+        setRadiusKm(DEFAULT_RADIUS_KM);
         setPlace({ label: "ta position", lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => setGeoError("Position refusée ou introuvable. Cherche une ville à la place."),
@@ -81,8 +87,11 @@ export function HomeExplorer() {
     );
   }
 
-  // Le bouton "chercher ici" n'apparaît que si la carte a bougé de plus de 1,5 km
-  const showSearchHere = moved !== null && distanceKm(moved, place) > 1.5;
+  // Le bouton "chercher ici" n'apparaît que si, depuis que la carte s'est calée
+  // sur les stations, on l'a déplacée de plus de 1,5 km ou nettement dézoomée
+  const reference = fittedView ?? { ...place, radiusKm };
+  const showSearchHere =
+    moved !== null && (distanceKm(moved, reference) > 1.5 || moved.radiusKm > 1.5 * reference.radiusKm);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-5">
@@ -101,6 +110,7 @@ export function HomeExplorer() {
           <CitySearch
             onPick={(p) => {
               setMoved(null);
+              setRadiusKm(DEFAULT_RADIUS_KM);
               setPlace(p);
             }}
           />
@@ -155,12 +165,14 @@ export function HomeExplorer() {
               document.getElementById(`station-${id}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
             }}
             onMoved={setMoved}
+            onFitted={setFittedView}
           />
           {showSearchHere && (
             <button
               type="button"
               onClick={() => {
                 setPlace({ label: "cette zone", lat: moved.lat, lng: moved.lng });
+                setRadiusKm(Math.min(Math.max(Math.round(moved.radiusKm), 2), MAX_RADIUS_KM));
                 setMoved(null);
               }}
               className="absolute left-1/2 top-3 z-[500] -translate-x-1/2 rounded bg-ink px-3 py-2 text-sm font-medium text-white shadow"
@@ -180,7 +192,7 @@ export function HomeExplorer() {
           )}
           {!error && !loading && stations.length === 0 && (
             <p className="p-4 text-[15px] text-muted">
-              Aucune station ne vend du {FUEL_LABELS[fuel]} à moins de {RADIUS_KM} km. Essaie un autre carburant ou
+              Aucune station ne vend du {FUEL_LABELS[fuel]} à moins de {radiusKm} km. Essaie un autre carburant ou
               une autre ville.
             </p>
           )}
